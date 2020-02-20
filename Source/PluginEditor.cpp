@@ -15,6 +15,10 @@
 PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& p, AudioProcessorValueTreeState& apvts, MidiKeyboardState& ks)
     : AudioProcessorEditor (&p), processor (p), parameters(apvts), keyboardState(ks), keyboardComponent(keyboardState, MidiKeyboardComponent::horizontalKeyboard)
 {
+    addAndMakeVisible(polygonSlider);
+    polygonSlider.setRange(3, 10);
+    polygonSlider.addListener(this);
+
     addAndMakeVisible(keyboardComponent);
 
     outGainLabel.setText("Out", dontSendNotification);
@@ -79,6 +83,8 @@ void PolygonAudioProcessorEditor::paint (Graphics& g)
     g.setColour (Colours::white);
     g.setFont (15.0f);
     //g.drawFittedText ("Hello World!", getLocalBounds(), Justification::centred, 1);
+    for (auto i = 0; vertices.size() > 1 && i < vertices.size() - 1; i++)
+        g.drawLine(vertices[i].getX(), vertices[i].getY(), vertices[i + 1].getX(), vertices[i + 1].getY(), 2);
 }
 
 void PolygonAudioProcessorEditor::resized()
@@ -105,8 +111,23 @@ void PolygonAudioProcessorEditor::resized()
     releaseSlider.setBounds(releaseArea);
 
     keyboardComponent.setBounds(area.removeFromBottom(100));
+    polygonSlider.setBounds(area.removeFromBottom(30));
 }
 
 void PolygonAudioProcessorEditor::sliderValueChanged(Slider* slider)
 {
+    if (slider == &polygonSlider)
+    {
+        calculatePolygon(vertices, polygonSlider.getValue(), { getWidth() / 2.0f, getHeight() / 2.0f }, 100);
+        repaint();
+    }
+}
+
+void PolygonAudioProcessorEditor::calculatePolygon(std::vector<Point<float>>& vertices, size_t numVertices, Point<float> center, float radius)
+{
+    auto deltaAngle = MathConstants<float>::twoPi / numVertices;
+    for (auto i = 0; i < numVertices; i++)
+    {
+        vertices.push_back({ radius * std::cos(deltaAngle * i) + center.getX(), radius * std::sin(deltaAngle * i) + center.getY() });
+    }
 }

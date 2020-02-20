@@ -37,6 +37,7 @@ public:
 
     //==============================================================================
     void sliderValueChanged(Slider* slider) override;
+    static void calculatePolygon(std::vector<Point<float>>& vertices, size_t numVertices, Point<float> center, float radius);
 
 private:
     using SliderAttachment = AudioProcessorValueTreeState::SliderAttachment;
@@ -67,6 +68,9 @@ private:
     Label outGainLabel;
     Slider outGainSlider;
     std::unique_ptr<SliderAttachment> outGainAttachment;
+
+    Slider polygonSlider;
+    std::vector<Point<float>> vertices;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PolygonAudioProcessorEditor)
 };
