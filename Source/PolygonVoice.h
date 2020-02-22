@@ -15,7 +15,7 @@
 class PolygonVoice : public SynthesiserVoice
 {
 public:
-    PolygonVoice(AudioProcessorValueTreeState&, ADSR::Parameters&, std::vector<float>&);
+    PolygonVoice(AudioProcessorValueTreeState&, ADSR::Parameters&, std::vector<float>&, std::vector<float>&);
     ~PolygonVoice() = default;
 
     bool canPlaySound(SynthesiserSound*) override;
@@ -27,13 +27,13 @@ public:
     void pitchWheelMoved(int newPitchWheelValue) override;
     void controllerMoved(int controllerNumber, int newControllerValue) override;
 
-    float getNextSample();
+    float getNextSample(bool isL);
     void renderNextBlock(AudioBuffer<float>& outputBuffer, int startSample, int numSamples) override;
     void setCurrentPlaybackSampleRate(double newRate) override;
 
 private:
     AudioProcessorValueTreeState& parameters;
-    std::vector<float>& wavetable;
+    std::vector<float> &wavetableL, &wavetableR;
 
     int currentNoteNumber{};
     float pitchBend{};

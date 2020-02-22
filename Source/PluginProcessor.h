@@ -58,12 +58,17 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
+    static void generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY, const std::vector<Point<float>> vertices, float rotation, float teeth, float fold);
+
+    //==============================================================================
     void setNumVoices(int newNumVoices);
     int getNumVoices();
     void setOversampleFactor(int newOversampleFactor);
     int getOversampleFactor() const { return oversampleFactor; }
     void setWavetableSize(int newWavetableSize);
     int getWavetableSize() const { return static_cast<int>(wavetable.size()); }
+    std::vector<float>& getWavetableX() { return waveX; }
+    std::vector<float>& getWavetableY() { return waveY; }
 
 private:
     AudioProcessorValueTreeState parameters;
@@ -89,8 +94,10 @@ private:
 
     DcBlocker dcBlocker;
 
-    int nextWavetableSize{ 1024 };
+    int nextWavetableSize{ 2048 };
     std::vector<float> wavetable;
+
+    std::vector<float> waveX, waveY;// = std::vector<float>(2048, 0), waveY = std::vector<float>(2048, 0);
 
     //==============================================================================
     void setPath(int numSamples);

@@ -155,10 +155,12 @@ PolygonAudioProcessor::PolygonAudioProcessor()
     parameters(*this, nullptr, Identifier("PolygonSynth"), createParameterLayout())
 #endif
 {
-    wavetable.resize(nextWavetableSize);
+    wavetable.resize(nextWavetableSize, 0.0f);
+    waveX.resize(nextWavetableSize, 0.0f);
+    waveY.resize(nextWavetableSize, 0.0f);
     for (auto i = 0; i < numVoices; ++i)
     {
-        synthesiser.addVoice(new PolygonVoice(parameters, envParams, wavetable));
+        synthesiser.addVoice(new PolygonVoice(parameters, envParams, waveX, waveY));
     }
     synthesiser.addSound(new PolygonSound());
 }
@@ -461,7 +463,7 @@ void PolygonAudioProcessor::setNumVoices(int newNumVoices)
     {
         for (auto i = synthNumVoices; i < numVoices; ++i)
         {
-            synthesiser.addVoice(new PolygonVoice(parameters, envParams, wavetable));
+            synthesiser.addVoice(new PolygonVoice(parameters, envParams, waveX, waveY));
         }
         jassert(numVoices == synthesiser.getNumVoices());
         return;
@@ -497,4 +499,59 @@ void PolygonAudioProcessor::setWavetableSize(int newWavetableSize)
 AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new PolygonAudioProcessor();
+}
+
+void PolygonAudioProcessor::generateWavetable(
+    size_t wavetableSize,
+    std::vector<float>& waveX,
+    std::vector<float>& waveY,
+    const std::vector<Point<float>> vertices,
+    float rotation, float teeth, float fold)
+{
+    waveX.resize(wavetableSize, 0.0f);
+    waveY.resize(wavetableSize, 0.0f);
+
+    std::vector<float> lengthArray;
+    float totalLength = 0;
+    lengthArray.push_back(0.0f);
+    for (size_t i = 1; i < vertices.size(); i++)
+    {
+        auto dist = (teeth * vertices[i]).getDistanceFrom(vertices[i - 1]);
+        totalLength += dist;
+        lengthArray.push_back(dist + lengthArray[lengthArray.size() - 1]);
+    }
+    auto deltaL = totalLength / (float)wavetableSize;
+
+    float currentPos = 0.0f;
+    size_t nextToLook = 1;
+
+    auto p0 = vertices[0].rotatedAboutOrigin(rotation), p1 = vertices[1].rotatedAboutOrigin(rotation) * teeth;
+    auto length = lengthArray[1] - lengthArray[0], offset = lengthArray[0];
+    Line<float> line(p0, p1);
+    for (size_t i = 0; i < wavetableSize; i++)
+    {
+        if (currentPos > lengthArray[nextToLook])
+        {
+            nextToLook += 1;
+            // length = lengthArray[nextToLook] - lengthArray[nextToLook - 1];
+            offset = lengthArray[nextToLook - 1];
+            p0 = vertices[nextToLook - 1].rotatedAboutOrigin(rotation);
+            p1 = vertices[nextToLook].rotatedAboutOrigin(rotation) * teeth;
+
+            line = Line(p0, p1);
+        }
+        auto t = currentPos - offset;
+        auto val = line.getPointAlongLine(t);
+        waveX[i] = val.getX() * fold;
+        while (waveX[i] > 1)
+            waveX[i] -= 2.0f;
+        while (waveX[i] < -1)
+            waveX[i] += 2.0f;
+        waveY[i] = val.getY() * fold;
+        while (waveY[i] > 1)
+            waveY[i] -= 2.0f;
+        while (waveY[i] < -1)
+            waveY[i] += 2.0f;
+        currentPos += deltaL;
+    }
 }

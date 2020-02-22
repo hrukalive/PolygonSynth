@@ -12,8 +12,9 @@
 #include "PolygonSound.h"
 
 PolygonVoice::PolygonVoice(AudioProcessorValueTreeState& apvts, ADSR::Parameters& envParams,
-    std::vector<float>& wavetable) : parameters(apvts),
-    wavetable(wavetable),
+    std::vector<float>& wavetableL, std::vector<float>& wavetableR) : parameters(apvts),
+    wavetableL(wavetableL),
+    wavetableR(wavetableR),
     envParams(envParams)
 {
     envelope.setParameters(envParams);
@@ -79,8 +80,10 @@ void PolygonVoice::controllerMoved(int controllerNumber, int newControllerValue)
 {
 }
 
-float PolygonVoice::getNextSample()
+float PolygonVoice::getNextSample(bool isL)
 {
+    auto& wavetable = isL ? wavetableL : wavetableR;
+
     const auto waveTablesize = wavetable.size();
     //linear interpolation between points in the wavetable	
     auto iFloating = t * waveTablesize;
@@ -119,7 +122,8 @@ void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSa
     {
         envelope.setParameters(envParams);
 
-        auto* channelData = outputBuffer.getWritePointer(0);
+        auto* channelDataL = outputBuffer.getWritePointer(0);
+        auto* channelDataR = outputBuffer.getWritePointer(1);
 
         for (auto sample = startSample; sample < startSample + numSamples; ++sample)
         {
@@ -128,8 +132,10 @@ void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSa
                 const auto envValue = envelope.getNextSample();
                 if (envValue != 0.0f)
                 {
-                    const auto value = getNextSample();
-                    channelData[sample] += value * level * envValue;
+                    const auto valueL = getNextSample(true);
+                    const auto valueR = getNextSample(false);
+                    channelDataL[sample] += valueL * level * envValue;
+                    channelDataR[sample] += valueR * level * envValue;
                 }
             }
             else
