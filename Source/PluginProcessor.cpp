@@ -12,20 +12,16 @@
 #include "PluginEditor.h"
 #include "PolygonVoice.h"
 #include "PolygonSound.h"
+#include "PolygonAlgorithm.h"
 #include "hiir/PolyphaseIir2Designer.h"
-
-struct PolygonSynthConstants
-{
-public:
-    static constexpr int maxVoices{ 20 };
-};
 
 
 AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
 {
     std::vector<std::unique_ptr<RangedAudioParameter>> params;
 
-    params.push_back(std::make_unique<AudioParameterFloat>("outgain",
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "outgain",
         "Out Gain",
         NormalisableRange<float>(0.0f,
             1.0f,
@@ -44,7 +40,8 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return Decibels::decibelsToGain(text.getFloatValue());
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>("attack",
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "attack",
         "Attack",
         NormalisableRange<float>(0.0f,
             20000.0f,
@@ -69,7 +66,8 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
             }
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>("decay",
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "decay",
         "Decay",
         NormalisableRange<float>(1.0f,
             60000.0f,
@@ -94,7 +92,8 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
             }
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>("sustain",
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "sustain",
         "Sustain",
         NormalisableRange<float>(0.0f,
             1.0,
@@ -113,7 +112,8 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return Decibels::decibelsToGain(text.getFloatValue());
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>("release",
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "release",
         "Release",
         NormalisableRange<float>(1.0f,
             60000.0f,
@@ -138,6 +138,66 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
             }
             return text.getFloatValue();
         }));
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "order",
+        "Order",
+        NormalisableRange<float>(2.0f, 20.0f, 0.02f, 0.4f, false),
+        3.0f,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 2);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "teeth",
+        "Teeth",
+        NormalisableRange<float>(0.0f, 1.0f, 0.01f, 1.0f, false),
+        0.0f,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(int(value * 100)) + " %";
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue() / 100.0f;
+        }));
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "rotation",
+        "Rottn",
+        NormalisableRange<float>(0.0f, MathConstants<float>::twoPi, MathConstants<float>::twoPi / 360.0f, 1.0f, false),
+        0.0f,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(int(value / MathConstants<float>::twoPi * 360)) + String(" °");
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue() / 360.0f * MathConstants<float>::twoPi;
+        }));
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "fold",
+        "Fold",
+        NormalisableRange<float>(1.0f, 10.0f, 0.05f, 0.4f, false),
+        1.0f,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 2);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
     return { params.begin(), params.end() };
 }
 
@@ -155,7 +215,7 @@ PolygonAudioProcessor::PolygonAudioProcessor()
     parameters(*this, nullptr, Identifier("PolygonSynth"), createParameterLayout())
 #endif
 {
-    wavetable.resize(nextWavetableSize, 0.0f);
+    Process::setPriority(Process::ProcessPriority::RealtimePriority);
     waveX.resize(nextWavetableSize, 0.0f);
     waveY.resize(nextWavetableSize, 0.0f);
     for (auto i = 0; i < numVoices; ++i)
@@ -236,30 +296,41 @@ void PolygonAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
 {
     synthesiser.setCurrentPlaybackSampleRate(sampleRate * oversampleFactor);
 
-    oversampledBuffer.setSize(1, samplesPerBlock * maxOversampleFactor);
+    oversampledBuffer.setSize(2, samplesPerBlock * maxOversampleFactor);
     oversampledBuffer.clear();
 
     double coefs[numCoeffs]{};
     hiir::PolyphaseIir2Designer::compute_coefs(coefs, 100.0, 0.1);
-    downsampler.set_coefs(coefs);
-    downsampler.clear_buffers();
+    downsamplerL.set_coefs(coefs);
+    downsamplerL.clear_buffers();
+    downsamplerR.set_coefs(coefs);
+    downsamplerR.clear_buffers();
 
     double coefs2[numCoeffs2]{};
     hiir::PolyphaseIir2Designer::compute_coefs(coefs2, 100.0, 0.1);
-    downsampler2.set_coefs(coefs2);
-    downsampler2.clear_buffers();
+    downsampler2L.set_coefs(coefs2);
+    downsampler2L.clear_buffers();
+    downsampler2R.set_coefs(coefs2);
+    downsampler2R.clear_buffers();
 
     double coefs3[numCoeffs3]{};
     hiir::PolyphaseIir2Designer::compute_coefs(coefs3, 100.0, 0.1);
-    downsampler3.set_coefs(coefs3);
-    downsampler3.clear_buffers();
+    downsampler3L.set_coefs(coefs3);
+    downsampler3L.clear_buffers();
+    downsampler3R.set_coefs(coefs3);
+    downsampler3R.clear_buffers();
 
     double coefs4[numCoeffs4]{};
     hiir::PolyphaseIir2Designer::compute_coefs(coefs4, 100.0, 0.1);
-    downsampler4.set_coefs(coefs4);
-    downsampler4.clear_buffers();
+    downsampler4L.set_coefs(coefs4);
+    downsampler4L.clear_buffers();
+    downsampler4R.set_coefs(coefs4);
+    downsampler4R.clear_buffers();
 
-    dcBlocker.reset();
+    dcBlockerL.reset();
+    dcBlockerR.reset();
+
+    ringBuffer = std::make_shared<RingBuffer<float>>(2, samplesPerBlock * 10);
 }
 
 void PolygonAudioProcessor::releaseResources()
@@ -310,8 +381,10 @@ void PolygonAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer
     updateEnvParams();
 
     buffer.clear(0, 0, buffer.getNumSamples());
+    buffer.clear(1, 0, buffer.getNumSamples());
 
     oversampledBuffer.clear(0, 0, oversampledBuffer.getNumSamples());
+    oversampledBuffer.clear(1, 0, oversampledBuffer.getNumSamples());
 
     {
         int numSamplesPerOversampledBlock = samplesPerSubBlock * oversampleFactor;
@@ -341,28 +414,28 @@ void PolygonAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer
     if (oversampleFactor >= 16)
     {
         //16x to 8x
-        downsampler4.process_block(oversampleWrite,
+        downsampler4L.process_block(oversampleWrite,
             oversampleWrite,
             buffer.getNumSamples() * 8);
     }
     if (oversampleFactor >= 8)
     {
         //8x to 4x
-        downsampler3.process_block(oversampleWrite,
+        downsampler3L.process_block(oversampleWrite,
             oversampleWrite,
             buffer.getNumSamples() * 4);
     }
     if (oversampleFactor >= 4)
     {
         //4x to 2x
-        downsampler2.process_block(oversampleWrite,
+        downsampler2L.process_block(oversampleWrite,
             oversampleWrite,
             buffer.getNumSamples() * 2);
     }
     if (oversampleFactor >= 2)
     {
         //2x to 1x
-        downsampler.process_block(bufferWrite, // out
+        downsamplerL.process_block(bufferWrite, // out
             oversampleWrite, // in
             buffer.getNumSamples());
     }
@@ -374,16 +447,54 @@ void PolygonAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer
 
     // filter dc offset
     for (int i = 0; i < buffer.getNumSamples(); ++i)
+        bufferWrite[i] = dcBlockerL.pushSample(bufferWrite[i]);
+
+
+    bufferWrite = buffer.getWritePointer(1);
+    oversampleWrite = oversampledBuffer.getWritePointer(1);
+    if (oversampleFactor >= 16)
     {
-        bufferWrite[i] = dcBlocker.pushSample(bufferWrite[i]);
+        //16x to 8x
+        downsampler4R.process_block(oversampleWrite,
+            oversampleWrite,
+            buffer.getNumSamples() * 8);
     }
+    if (oversampleFactor >= 8)
+    {
+        //8x to 4x
+        downsampler3R.process_block(oversampleWrite,
+            oversampleWrite,
+            buffer.getNumSamples() * 4);
+    }
+    if (oversampleFactor >= 4)
+    {
+        //4x to 2x
+        downsampler2R.process_block(oversampleWrite,
+            oversampleWrite,
+            buffer.getNumSamples() * 2);
+    }
+    if (oversampleFactor >= 2)
+    {
+        //2x to 1x
+        downsamplerR.process_block(bufferWrite, // out
+            oversampleWrite, // in
+            buffer.getNumSamples());
+    }
+    else
+    {
+        //1x to 1x
+        buffer.copyFrom(1, 0, oversampledBuffer, 1, 0, buffer.getNumSamples());
+    }
+
+    // filter dc offset
+    for (int i = 0; i < buffer.getNumSamples(); ++i)
+        bufferWrite[i] = dcBlockerR.pushSample(bufferWrite[i]);
 
     // todo smoothing
     buffer.applyGain(0, 0, buffer.getNumSamples(), parameters.getParameterAsValue("outgain").getValue());
+    buffer.applyGain(1, 0, buffer.getNumSamples(), parameters.getParameterAsValue("outgain").getValue());
 
-    // copy the processed channel to all the other channels
-    for (auto i = 1; i < totalNumOutputChannels; ++i)
-        buffer.copyFrom(i, 0, buffer, 0, 0, buffer.getNumSamples());
+    ringBuffer->writeSamples(buffer, 0, buffer.getNumSamples());
 
     midiMessages.clear();
 }
@@ -405,11 +516,13 @@ void PolygonAudioProcessor::getStateInformation (MemoryBlock& destData)
     // You should use this method to store your parameters in the memory block.
     // You could do that either as raw data, or use the XML or ValueTree classes
     // as intermediaries to make it easy to save and load complex data.
+    jassert(waveX.size() == waveY.size());
+
     const auto state = parameters.copyState();
     const auto xml(state.createXml());
     xml->setAttribute("maxVoices", numVoices);
     xml->setAttribute("oversampleFactor", oversampleFactor);
-    xml->setAttribute("wavetableSize", static_cast<int>(wavetable.size()));
+    xml->setAttribute("wavetableSize", static_cast<int>(waveX.size()));
     copyXmlToBinary(*xml, destData);
 }
 
@@ -501,57 +614,18 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new PolygonAudioProcessor();
 }
 
-void PolygonAudioProcessor::generateWavetable(
-    size_t wavetableSize,
-    std::vector<float>& waveX,
-    std::vector<float>& waveY,
-    const std::vector<Point<float>> vertices,
-    float rotation, float teeth, float fold)
+void PolygonAudioProcessor::generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY, AudioProcessorValueTreeState& parameters)
 {
     waveX.resize(wavetableSize, 0.0f);
     waveY.resize(wavetableSize, 0.0f);
 
-    std::vector<float> lengthArray;
-    float totalLength = 0;
-    lengthArray.push_back(0.0f);
-    for (size_t i = 1; i < vertices.size(); i++)
-    {
-        auto dist = (teeth * vertices[i]).getDistanceFrom(vertices[i - 1]);
-        totalLength += dist;
-        lengthArray.push_back(dist + lengthArray[lengthArray.size() - 1]);
-    }
-    auto deltaL = totalLength / (float)wavetableSize;
-
-    float currentPos = 0.0f;
-    size_t nextToLook = 1;
-
-    auto p0 = vertices[0].rotatedAboutOrigin(rotation), p1 = vertices[1].rotatedAboutOrigin(rotation) * teeth;
-    auto length = lengthArray[1] - lengthArray[0], offset = lengthArray[0];
-    Line<float> line(p0, p1);
     for (size_t i = 0; i < wavetableSize; i++)
     {
-        if (currentPos > lengthArray[nextToLook])
-        {
-            nextToLook += 1;
-            // length = lengthArray[nextToLook] - lengthArray[nextToLook - 1];
-            offset = lengthArray[nextToLook - 1];
-            p0 = vertices[nextToLook - 1].rotatedAboutOrigin(rotation);
-            p1 = vertices[nextToLook].rotatedAboutOrigin(rotation) * teeth;
-
-            line = Line(p0, p1);
-        }
-        auto t = currentPos - offset;
-        auto val = line.getPointAlongLine(t);
-        waveX[i] = val.getX() * fold;
-        while (waveX[i] > 1)
-            waveX[i] -= 2.0f;
-        while (waveX[i] < -1)
-            waveX[i] += 2.0f;
-        waveY[i] = val.getY() * fold;
-        while (waveY[i] > 1)
-            waveY[i] -= 2.0f;
-        while (waveY[i] < -1)
-            waveY[i] += 2.0f;
-        currentPos += deltaL;
+        const auto value = PolygonSynthAlgorithm::getSample(
+            (float)i / (float)wavetableSize,
+            parameters.getParameterAsValue("order").getValue(),
+            parameters.getParameterAsValue("teeth").getValue(),
+            parameters.getParameterAsValue("fold").getValue(),
+            parameters.getParameterAsValue("rotation").getValue());
     }
 }

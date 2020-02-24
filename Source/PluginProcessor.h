@@ -13,6 +13,7 @@
 #include <JuceHeader.h>
 #include "hiir/Downsampler2xFpu.h"
 #include "DcBlocker.h"
+#include "RingBuffer.h"
 
 //==============================================================================
 /**
@@ -58,7 +59,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    static void generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY, const std::vector<Point<float>> vertices, float rotation, float teeth, float fold);
+    static void generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY, AudioProcessorValueTreeState& parameters);
 
     //==============================================================================
     void setNumVoices(int newNumVoices);
@@ -66,9 +67,11 @@ public:
     void setOversampleFactor(int newOversampleFactor);
     int getOversampleFactor() const { return oversampleFactor; }
     void setWavetableSize(int newWavetableSize);
-    int getWavetableSize() const { return static_cast<int>(wavetable.size()); }
+    int getWavetableSize() const { return static_cast<int>(waveX.size()); }
     std::vector<float>& getWavetableX() { return waveX; }
     std::vector<float>& getWavetableY() { return waveY; }
+
+    std::shared_ptr<RingBuffer<float>>& getRingBuffer() { return ringBuffer; }
 
 private:
     AudioProcessorValueTreeState parameters;
@@ -80,27 +83,26 @@ private:
     static constexpr int samplesPerSubBlock = 32;
 
     static constexpr int numCoeffs{ 6 };
-    hiir::Downsampler2xFpu<numCoeffs> downsampler;
+    hiir::Downsampler2xFpu<numCoeffs> downsamplerL, downsamplerR;
     static constexpr int numCoeffs2{ 6 };
-    hiir::Downsampler2xFpu<numCoeffs> downsampler2;
+    hiir::Downsampler2xFpu<numCoeffs2> downsampler2L, downsampler2R;
     static constexpr int numCoeffs3{ 6 };
-    hiir::Downsampler2xFpu<numCoeffs> downsampler3;
+    hiir::Downsampler2xFpu<numCoeffs3> downsampler3L, downsampler3R;
     static constexpr int numCoeffs4{ 6 };
-    hiir::Downsampler2xFpu<numCoeffs> downsampler4;
+    hiir::Downsampler2xFpu<numCoeffs4> downsampler4L, downsampler4R;
+
+    DcBlocker dcBlockerL, dcBlockerR;
 
     static constexpr int maxOversampleFactor{ 16 };
-    int oversampleFactor{ 8 };
+    int oversampleFactor{ 2 };
     AudioBuffer<float> oversampledBuffer;
 
-    DcBlocker dcBlocker;
+    int nextWavetableSize{ 1024 };
+    std::vector<float> waveX, waveY;
 
-    int nextWavetableSize{ 2048 };
-    std::vector<float> wavetable;
-
-    std::vector<float> waveX, waveY;// = std::vector<float>(2048, 0), waveY = std::vector<float>(2048, 0);
+    std::shared_ptr<RingBuffer<float>> ringBuffer;
 
     //==============================================================================
-    void setPath(int numSamples);
     void updateEnvParams();
 
     //==============================================================================

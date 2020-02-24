@@ -12,6 +12,8 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
+#include "Oscilloscope2D.h"
+#include "RingBuffer.h"
 
 //==============================================================================
 /**
@@ -37,7 +39,6 @@ public:
 
     //==============================================================================
     void sliderValueChanged(Slider* slider) override;
-    static void calculatePolygon(std::vector<Point<float>>& vertices, float numVertices);
 
 private:
     using SliderAttachment = AudioProcessorValueTreeState::SliderAttachment;
@@ -48,6 +49,12 @@ private:
 
     MidiKeyboardState& keyboardState;
     MidiKeyboardComponent keyboardComponent;
+
+    Label voicesLabel;
+    Slider voicesSlider;
+
+    Label oversamplingLabel;
+    ComboBox oversamplingBox;
 
     Label attackLabel;
     Slider attackSlider;
@@ -71,20 +78,25 @@ private:
 
     Label polygonOrderLabel;
     Slider polygonOrderSlider;
-
-    Label polygonRotationLabel;
-    Slider polygonRotationSlider;
+    std::unique_ptr<SliderAttachment> polygonOrderAttachment;
 
     Label polygonTeethLabel;
     Slider polygonTeethSlider;
+    std::unique_ptr<SliderAttachment> polygonTeethAttachment;
 
     Label polygonFoldLabel;
     Slider polygonFoldSlider;
+    std::unique_ptr<SliderAttachment> polygonFoldAttachment;
 
-    float polygonRotation = 0, polygonTeeth = 1, polygonFold = 1;
+    Label polygonRotationLabel;
+    Slider polygonRotationSlider;
+    std::unique_ptr<SliderAttachment> polygonRotationAttachment;
 
-    std::vector<Point<float>> vertices = std::vector<Point<float>>(3, { 0.0f, 0.0f });
-    std::vector<float> &waveX, &waveY;
+    Label nameLabel;
+    Path titlePath;
+
+    std::shared_ptr<RingBuffer<float>>& ringBuffer;
+    std::unique_ptr<Oscilloscope2D> oscilloscope2D;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PolygonAudioProcessorEditor)
 };

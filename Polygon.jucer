@@ -32,8 +32,15 @@
         <FILE id="iw3q4x" name="StageProcFpu.hpp" compile="0" resource="0"
               file="Source/hiir/StageProcFpu.hpp"/>
       </GROUP>
+      <FILE id="oapfVL" name="Oscilloscope2D.h" compile="0" resource="0"
+            file="Source/Oscilloscope2D.h"/>
+      <FILE id="a6cNIE" name="RingBuffer.h" compile="0" resource="0" file="Source/RingBuffer.h"/>
       <FILE id="TFMIjL" name="DcBlocker.cpp" compile="1" resource="0" file="Source/DcBlocker.cpp"/>
       <FILE id="LYfAkn" name="DcBlocker.h" compile="0" resource="0" file="Source/DcBlocker.h"/>
+      <FILE id="ijrQd6" name="PolygonAlgorithm.cpp" compile="1" resource="0"
+            file="Source/PolygonAlgorithm.cpp"/>
+      <FILE id="kqFxZc" name="PolygonAlgorithm.h" compile="0" resource="0"
+            file="Source/PolygonAlgorithm.h"/>
       <FILE id="lFZ27X" name="PolygonSound.h" compile="0" resource="0" file="Source/PolygonSound.h"/>
       <FILE id="kD7YbB" name="PolygonVoice.cpp" compile="1" resource="0"
             file="Source/PolygonVoice.cpp"/>

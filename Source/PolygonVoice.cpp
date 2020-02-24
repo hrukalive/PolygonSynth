@@ -10,6 +10,7 @@
 
 #include "PolygonVoice.h"
 #include "PolygonSound.h"
+#include "PolygonAlgorithm.h"
 
 PolygonVoice::PolygonVoice(AudioProcessorValueTreeState& apvts, ADSR::Parameters& envParams,
     std::vector<float>& wavetableL, std::vector<float>& wavetableR) : parameters(apvts),
@@ -105,14 +106,6 @@ float PolygonVoice::getNextSample(bool isL)
         value = prevValue;
     }
     prevValue = value;
-
-    t += phaseIncrement;
-
-    if (t >= 1.0f)
-    {
-        t -= 1.0f;
-        if (t >= 1.0f) { jassertfalse; }
-    }
     return value;
 }
 
@@ -132,10 +125,25 @@ void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSa
                 const auto envValue = envelope.getNextSample();
                 if (envValue != 0.0f)
                 {
-                    const auto valueL = getNextSample(true);
-                    const auto valueR = getNextSample(false);
-                    channelDataL[sample] += valueL * level * envValue;
-                    channelDataR[sample] += valueR * level * envValue;
+                    //const auto valueL = getNextSample(true);
+                    //const auto valueR = getNextSample(false);
+                    
+                    const auto value = PolygonSynthAlgorithm::getSample(
+                        t,
+                        parameters.getParameterAsValue("order").getValue(),
+                        parameters.getParameterAsValue("teeth").getValue(),
+                        parameters.getParameterAsValue("fold").getValue(),
+                        parameters.getParameterAsValue("rotation").getValue());
+
+                    t += phaseIncrement;
+
+                    if (t >= 1.0f)
+                    {
+                        t -= 1.0f;
+                        if (t >= 1.0f) { jassertfalse; }
+                    }
+                    channelDataL[sample] += value.x * level * envValue;
+                    channelDataR[sample] += value.y * level * envValue;
                 }
             }
             else
