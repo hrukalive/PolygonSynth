@@ -19,6 +19,8 @@ public:
 
     static inline Point<float> getSample(float t, float numVertices, float teeth, float fold, float rotation)
     {
+        jassert(numVertices >= 2.0f);
+
         t -= rotation / MathConstants<float>::twoPi;
         if (t < 0.0f)
             t += 1.0f;
@@ -56,6 +58,8 @@ public:
             waveY -= 2.0f;
         while (waveY < -1)
             waveY += 2.0f;
+
+        jassert(!isnan(waveX) && !isnan(waveY));
 
         return Point<float>(waveX, waveY);
     }

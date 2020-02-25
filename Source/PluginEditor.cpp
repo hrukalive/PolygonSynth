@@ -17,7 +17,7 @@
 PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& p, AudioProcessorValueTreeState& apvts, MidiKeyboardState& ks)
     : AudioProcessorEditor (&p), processor (p), parameters(apvts), keyboardState(ks), keyboardComponent(keyboardState, MidiKeyboardComponent::horizontalKeyboard)
 {
-    display = std::make_unique<PolygonDisplay>(*this);
+    display = std::make_unique<PolygonDisplay>(p);
     addAndMakeVisible(*display);
 
     GlyphArrangement glyph;

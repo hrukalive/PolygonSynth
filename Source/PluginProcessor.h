@@ -59,7 +59,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    void generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY);
+    std::pair<std::vector<float>, std::vector<float>> generateWavetable(size_t wavetableSize);
 
     //==============================================================================
     void setNumVoices(int newNumVoices);
@@ -70,7 +70,6 @@ public:
     int getWavetableSize() const { return static_cast<int>(waveX.size()); }
     std::vector<float>& getWavetableX() { return waveX; }
     std::vector<float>& getWavetableY() { return waveY; }
-
     std::shared_ptr<RingBuffer<float>>& getRingBuffer() { return ringBuffer; }
 
 private:

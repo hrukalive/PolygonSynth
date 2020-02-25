@@ -644,20 +644,21 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new PolygonAudioProcessor();
 }
 
-void PolygonAudioProcessor::generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY)
+std::pair<std::vector<float>, std::vector<float>> PolygonAudioProcessor::generateWavetable(size_t wavetableSize)
 {
-    waveX.resize(wavetableSize, 0.0f);
-    waveY.resize(wavetableSize, 0.0f);
+    std::vector<float> waveX(wavetableSize, 0.0f);
+    std::vector<float> waveY(wavetableSize, 0.0f);
 
     for (size_t i = 0; i < wavetableSize; i++)
     {
         const auto value = PolygonSynthAlgorithm::getSample(
             (float)i / (float)wavetableSize,
-            parameters.getParameterAsValue("order").getValue(),
-            parameters.getParameterAsValue("teeth").getValue(),
-            parameters.getParameterAsValue("fold").getValue(),
-            parameters.getParameterAsValue("rotation").getValue());
+            *parameters.getRawParameterValue("order"),
+            *parameters.getRawParameterValue("teeth"),
+            *parameters.getRawParameterValue("fold"),
+            *parameters.getRawParameterValue("rotation"));
         waveX[i] = value.getX();
         waveY[i] = value.getY();
     }
+    return std::make_pair(waveX, waveY);
 }
