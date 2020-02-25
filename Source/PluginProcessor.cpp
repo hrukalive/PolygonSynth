@@ -177,7 +177,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         AudioProcessorParameter::genericParameter,
         [](const float value, int /*maximumStringLength*/)
         {
-            return String(int(value / MathConstants<float>::twoPi * 360)) + String(" °");
+            return String(int(value / MathConstants<float>::twoPi * 360)) + String(CharPointer_UTF8("°"));
         },
         [](const String& text)
         {
@@ -188,6 +188,36 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         "Fold",
         NormalisableRange<float>(1.0f, 10.0f, 0.05f, 0.4f, false),
         1.0f,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 2);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "fmratio",
+        "Ratio",
+        NormalisableRange<float>(0.1f, 10.0f, 0.05f, 0.4f, false),
+        1.0f,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 2);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "fmamt",
+        "Amt",
+        NormalisableRange<float>(0.0f, 10.0f, 0.01f, 0.4f, false),
+        0.0f,
         String(),
         AudioProcessorParameter::genericParameter,
         [](const float value, int /*maximumStringLength*/)
@@ -540,7 +570,7 @@ void PolygonAudioProcessor::setStateInformation (const void* data, int sizeInByt
         }
         if (xmlState->hasAttribute("oversampleFactor"))
         {
-            setOversampleFactor(xmlState->getIntAttribute("oversampleFactor", 8));
+            setOversampleFactor(xmlState->getIntAttribute("oversampleFactor", 2));
             xmlState->removeAttribute("oversampleFactor");
         }
         if (xmlState->hasAttribute("wavetableSize"))
@@ -614,7 +644,7 @@ AudioProcessor* JUCE_CALLTYPE createPluginFilter()
     return new PolygonAudioProcessor();
 }
 
-void PolygonAudioProcessor::generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY, AudioProcessorValueTreeState& parameters)
+void PolygonAudioProcessor::generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY)
 {
     waveX.resize(wavetableSize, 0.0f);
     waveY.resize(wavetableSize, 0.0f);
@@ -627,5 +657,7 @@ void PolygonAudioProcessor::generateWavetable(size_t wavetableSize, std::vector<
             parameters.getParameterAsValue("teeth").getValue(),
             parameters.getParameterAsValue("fold").getValue(),
             parameters.getParameterAsValue("rotation").getValue());
+        waveX[i] = value.getX();
+        waveY[i] = value.getY();
     }
 }

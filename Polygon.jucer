@@ -41,6 +41,10 @@
             file="Source/PolygonAlgorithm.cpp"/>
       <FILE id="kqFxZc" name="PolygonAlgorithm.h" compile="0" resource="0"
             file="Source/PolygonAlgorithm.h"/>
+      <FILE id="DHb1Hi" name="PolygonDisplay.cpp" compile="1" resource="0"
+            file="Source/PolygonDisplay.cpp"/>
+      <FILE id="MVq9Bw" name="PolygonDisplay.h" compile="0" resource="0"
+            file="Source/PolygonDisplay.h"/>
       <FILE id="lFZ27X" name="PolygonSound.h" compile="0" resource="0" file="Source/PolygonSound.h"/>
       <FILE id="kD7YbB" name="PolygonVoice.cpp" compile="1" resource="0"
             file="Source/PolygonVoice.cpp"/>

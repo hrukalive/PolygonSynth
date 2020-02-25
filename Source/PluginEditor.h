@@ -12,8 +12,7 @@
 
 #include <JuceHeader.h>
 #include "PluginProcessor.h"
-#include "Oscilloscope2D.h"
-#include "RingBuffer.h"
+#include "PolygonDisplay.h"
 
 //==============================================================================
 /**
@@ -92,11 +91,18 @@ private:
     Slider polygonRotationSlider;
     std::unique_ptr<SliderAttachment> polygonRotationAttachment;
 
+    Label polygonFmRatioLabel;
+    Slider polygonFmRatioSlider;
+    std::unique_ptr<SliderAttachment> polygonFmRatioAttachment;
+
+    Label polygonFmAmtLabel;
+    Slider polygonFmAmtSlider;
+    std::unique_ptr<SliderAttachment> polygonFmAmtAttachment;
+
     Label nameLabel;
     Path titlePath;
 
-    std::shared_ptr<RingBuffer<float>>& ringBuffer;
-    std::unique_ptr<Oscilloscope2D> oscilloscope2D;
+    std::unique_ptr<PolygonDisplay> display;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (PolygonAudioProcessorEditor)
 };

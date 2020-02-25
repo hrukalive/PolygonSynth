@@ -59,7 +59,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    static void generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY, AudioProcessorValueTreeState& parameters);
+    void generateWavetable(size_t wavetableSize, std::vector<float>& waveX, std::vector<float>& waveY);
 
     //==============================================================================
     void setNumVoices(int newNumVoices);

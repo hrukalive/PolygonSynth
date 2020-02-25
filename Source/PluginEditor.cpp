@@ -15,12 +15,10 @@
 
 //==============================================================================
 PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& p, AudioProcessorValueTreeState& apvts, MidiKeyboardState& ks)
-    : AudioProcessorEditor (&p), processor (p), parameters(apvts), keyboardState(ks), keyboardComponent(keyboardState, MidiKeyboardComponent::horizontalKeyboard), ringBuffer(p.getRingBuffer())
+    : AudioProcessorEditor (&p), processor (p), parameters(apvts), keyboardState(ks), keyboardComponent(keyboardState, MidiKeyboardComponent::horizontalKeyboard)
 {
-    //oscilloscope2D = std::make_unique<Oscilloscope2D>(ringBuffer);
-    //oscilloscope2D->setVisible(true);
-    //oscilloscope2D->start();
-    //addChildComponent(*oscilloscope2D);
+    display = std::make_unique<PolygonDisplay>(*this);
+    addAndMakeVisible(*display);
 
     GlyphArrangement glyph;
     glyph.addLineOfText(Font(32, Font::bold), "POLYGOGO SIM", 12, 38);
@@ -50,7 +48,6 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
     polygonRotationAttachment.reset(new SliderAttachment(parameters, "rotation", polygonRotationSlider));
 
 
-
     polygonTeethLabel.setText("Teeth", dontSendNotification);
     makeLabelUpperCase(polygonTeethLabel);
     addAndMakeVisible(polygonTeethLabel);
@@ -60,7 +57,6 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
     polygonTeethAttachment.reset(new SliderAttachment(parameters, "teeth", polygonTeethSlider));
 
 
-
     polygonFoldLabel.setText("Fold", dontSendNotification);
     makeLabelUpperCase(polygonFoldLabel);
     addAndMakeVisible(polygonFoldLabel);
@@ -68,6 +64,23 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
     polygonFoldSlider.setTextBoxStyle(Slider::TextBoxBelow, false, 64, 32);
     polygonFoldSlider.setSliderStyle(Slider::LinearVertical);
     polygonFoldAttachment.reset(new SliderAttachment(parameters, "fold", polygonFoldSlider));
+
+
+    polygonFmRatioLabel.setText("FM Ratio", dontSendNotification);
+    makeLabelUpperCase(polygonFmRatioLabel);
+    addAndMakeVisible(polygonFmRatioLabel);
+    addAndMakeVisible(polygonFmRatioSlider);
+    polygonFmRatioSlider.setTextBoxStyle(Slider::TextBoxRight, false, 64, 32);
+    polygonFmRatioAttachment.reset(new SliderAttachment(parameters, "fmratio", polygonFmRatioSlider));
+
+
+    polygonFmAmtLabel.setText("FM Amt", dontSendNotification);
+    makeLabelUpperCase(polygonFmAmtLabel);
+    addAndMakeVisible(polygonFmAmtLabel);
+    addAndMakeVisible(polygonFmAmtSlider);
+    polygonFmAmtSlider.setTextBoxStyle(Slider::TextBoxRight, false, 64, 32);
+    polygonFmAmtAttachment.reset(new SliderAttachment(parameters, "fmamt", polygonFmAmtSlider));
+
 
     addAndMakeVisible(keyboardComponent);
 
@@ -99,7 +112,7 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
     makeLabelUpperCase(outGainLabel);
     addAndMakeVisible(outGainLabel);
     addAndMakeVisible(outGainSlider);
-    outGainSlider.setSliderStyle(Slider::Rotary);
+    //outGainSlider.setSliderStyle(Slider::Rotary);
     outGainAttachment.reset(new SliderAttachment(parameters, "outgain", outGainSlider));
 
     setupAdsrControl(attackLabel, attackSlider, attackAttachment, "Attack", "attack");
@@ -108,13 +121,13 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
     setupAdsrControl(releaseLabel, releaseSlider, releaseAttachment, "Release", "release");
 
     setResizable(true, true);
-    setResizeLimits(256, 256, 2048, 2048);
+    setResizeLimits(600, 500, 2048, 2048);
     setSize(885, 720);
 }
 
 PolygonAudioProcessorEditor::~PolygonAudioProcessorEditor()
 {
-    //oscilloscope2D->stop();
+    display = nullptr;
 }
 
 void PolygonAudioProcessorEditor::makeLabelUpperCase(Label& label)
@@ -160,39 +173,6 @@ void PolygonAudioProcessorEditor::paint (Graphics& g)
 
     g.setColour(Colour(0xffdcc296));
     g.strokePath(titlePath, PathStrokeType(1.0f));
-
-
-    Point<float> center{ getWidth() / 2.0f, getHeight() / 2.0f - 100 };
-    Point<float> center2{ getWidth() / 2.0f + 200, getHeight() / 2.0f - 100 - 50 };
-    g.setColour(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
-    g.fillRect(center.getX() - 120, center.getY() - 120, 240.0f, 240.0f);
-
-    g.setColour (Colours::white);
-    //for (auto& edge : polygonEdges)
-    //{
-    //    auto p0 = edge.p0.rotatedAboutOrigin(polygonRotation) * (1.0f - polygonTeeth);
-    //    auto p1 = edge.p1.rotatedAboutOrigin(polygonRotation) * (1.0f - edge.endpointWeight * polygonTeeth);
-    //    g.drawLine(Line(100.0f * p0 + center2, 100.0f * p1 + center2), 2);
-    //}
-    //for (size_t i = 0; i < processor.getWavetableSize(); i++)
-    //{
-        //Point<float> p0{ waveX[i - 1], waveY[i - 1] }, p1{ waveX[i],waveY[i] };
-        //g.drawLine(Line(100.0f * p0 + center, 100.0f * p1 + center), 2);
-        //g.fillEllipse(100 * waveX[i] + center.getX(), 100 * waveY[i] + center.getY(), 1, 1);
-    //}
-
-    std::vector<Point<float>> vertices;
-    for (int i = 0; i < 1024; i++)
-    {
-        vertices.push_back(PolygonSynthAlgorithm::getSample(i / 1024.0f, polygonOrderSlider.getValue(), polygonTeethSlider.getValue(), polygonFoldSlider.getValue(), polygonRotationSlider.getValue()));
-    }
-    for (int i = 1; i < vertices.size(); i++)
-    {
-        auto p = vertices[i], lastP = vertices[i - 1];
-        g.fillEllipse(100 * p.getX() + center.getX(), 100 * -p.getY() + center.getY(), 1, 1);
-        g.drawLine(100 * (i - 513) / 1200.0f + center2.getX(), 49 * -lastP.getX() + center2.getY(), 100 * (i - 512) / 1200.0 + center2.getX(), 49 * -p.getX() + center2.getY(), 1.0);
-        g.drawLine(100 * (i - 513) / 1200.0f + center2.getX(), 49 * -lastP.getY() + center2.getY() + 102, 100 * (i - 512) / 1200.0 + center2.getX(), 49 * -p.getY() + center2.getY() + 102, 1.0);
-    }
 }
 
 void PolygonAudioProcessorEditor::resized()
@@ -240,9 +220,10 @@ void PolygonAudioProcessorEditor::resized()
     auto middlePanel = area.withTrimmedTop(10).withTrimmedBottom(10);
 
     auto middleLeftPanel = middlePanel.removeFromLeft(middlePanel.proportionOfWidth(0.4));
-    auto middleRightPanel = middlePanel;
-    //oscilloscope2D->setBounds(middleRightPanel);
+    auto middleRightPanel = middlePanel.withTrimmedLeft(4);
+    display->setBounds(middleRightPanel);
     auto middleLeftTopPanel = middleLeftPanel.removeFromTop(middleLeftPanel.proportionOfHeight(0.8));
+    auto middleLeftBottomPanel = middleLeftPanel.withTrimmedTop(4);
 
     auto tmp = middleLeftTopPanel.proportionOfWidth(0.25);
     auto orderArea = middleLeftTopPanel.removeFromLeft(tmp);
@@ -258,6 +239,12 @@ void PolygonAudioProcessorEditor::resized()
     polygonRotationSlider.setBounds(rotationArea);
     polygonTeethSlider.setBounds(teethArea);
     polygonFoldSlider.setBounds(foldArea);
+
+    tmp = middleLeftBottomPanel.proportionOfHeight(0.5);
+    auto fmRatioArea = middleLeftBottomPanel.removeFromTop(tmp);
+    auto fmAmtArea = middleLeftBottomPanel.removeFromTop(tmp);
+    polygonFmRatioSlider.setBounds(fmRatioArea);
+    polygonFmAmtSlider.setBounds(fmAmtArea);
 }
 
 void PolygonAudioProcessorEditor::sliderValueChanged(Slider* slider)
