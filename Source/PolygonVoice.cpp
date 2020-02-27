@@ -21,6 +21,10 @@ PolygonVoice::PolygonVoice(AudioProcessorValueTreeState& apvts, ADSR::Parameters
     envelope.setParameters(envParams);
 }
 
+PolygonVoice::~PolygonVoice()
+{
+}
+
 bool PolygonVoice::canPlaySound(SynthesiserSound* sound)
 {
     return dynamic_cast<PolygonSound*>(sound) != nullptr;
@@ -46,8 +50,13 @@ void PolygonVoice::stopNote(float velocity, bool allowTailOff)
     {
         clearCurrentNote();
         phaseIncrement = 0.0f;
+        fmPhaseIncrement = 0.0f;
+        maxPhaseIncrIncrement = 0.0f;
+        rotationPhaseIncrement = 0.0f;
         prevValue = 0.0f;
         t = 0.0f;
+        t_mod = 0.0f;
+        t_rotation = 0.0f;
         envelope.reset();
     }
 }
@@ -68,7 +77,10 @@ void PolygonVoice::updatePhaseIncrement()
 {
     const auto frequencyOfA = 440.0f;
     const auto frequency = frequencyOfA * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
-    phaseIncrement = frequency / getSampleRate();
+    //fmPhaseIncrement = (frequency * (*parameters.getRawParameterValue("fmratio"))) / getSampleRate();
+    //maxPhaseIncrIncrement = (frequency * (*parameters.getRawParameterValue("fmratio"))) * (*parameters.getRawParameterValue("fmamt")) / getSampleRate();
+    phaseIncrement = (frequency + maxPhaseIncrIncrement * std::sinf(2 * MathConstants<float>::twoPi * t_mod)) / getSampleRate();
+    //rotationPhaseIncrement = (*parameters.getRawParameterValue("rotation")) / getSampleRate();
 }
 
 void PolygonVoice::pitchWheelMoved(int newPitchWheelValue)
@@ -111,50 +123,55 @@ float PolygonVoice::getNextSample(bool isL)
 
 void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSample, int numSamples)
 {
-    if (phaseIncrement != 0.0f)
+    envelope.setParameters(envParams);
+
+    auto* channelDataL = outputBuffer.getWritePointer(0);
+    auto* channelDataR = outputBuffer.getWritePointer(1);
+
+    for (auto sample = startSample; sample < startSample + numSamples; ++sample)
     {
-        envelope.setParameters(envParams);
-
-        auto* channelDataL = outputBuffer.getWritePointer(0);
-        auto* channelDataR = outputBuffer.getWritePointer(1);
-
-        for (auto sample = startSample; sample < startSample + numSamples; ++sample)
+        if (envelope.isActive())
         {
-            if (envelope.isActive())
+            const auto envValue = envelope.getNextSample();
+            if (envValue != 0.0f)
             {
-                const auto envValue = envelope.getNextSample();
-                if (envValue != 0.0f)
-                {
-                    //const auto valueL = getNextSample(true);
-                    //const auto valueR = getNextSample(false);
-                    
-                    const auto value = PolygonSynthAlgorithm::getSample(
-                        t,
-                        parameters.getParameterAsValue("order").getValue(),
-                        parameters.getParameterAsValue("teeth").getValue(),
-                        parameters.getParameterAsValue("fold").getValue(),
-                        parameters.getParameterAsValue("rotation").getValue());
+                const auto value = PolygonSynthAlgorithm::getSample(
+                    t,
+                    3,//parameters.getParameterAsValue("order").getValue(),
+                    0,//parameters.getParameterAsValue("teeth").getValue(),
+                    1,//parameters.getParameterAsValue("fold").getValue(),
+                    t_rotation);
 
-                    t += phaseIncrement;
+                t_mod += fmPhaseIncrement;
+                phaseIncrement += maxPhaseIncrIncrement * std::sinf(MathConstants<float>::twoPi * t_mod);
+                t += phaseIncrement;
+                t_rotation += rotationPhaseIncrement;
 
-                    if (t >= 1.0f)
-                    {
-                        t -= 1.0f;
-                        if (t >= 1.0f) { jassertfalse; }
-                    }
-                    channelDataL[sample] += value.x * level * envValue;
-                    channelDataR[sample] += value.y * level * envValue;
-                }
+                while (t < 0.0f)
+                    t += 1.0f;
+                while (t >= 1.0f)
+                    t -= 1.0f;
+                while (t_mod < 0.0f)
+                    t_mod += 1.0f;
+                while (t_mod >= 1.0f)
+                    t_mod -= 1.0f;
+                while (t_rotation < MathConstants<float>::twoPi)
+                    t_rotation += MathConstants<float>::twoPi;
+                while (t_rotation >= MathConstants<float>::twoPi)
+                    t_rotation -= MathConstants<float>::twoPi;
+                channelDataL[sample] += value.x * level * envValue;
+                channelDataR[sample] += value.y * level * envValue;
             }
-            else
-            {
-                clearCurrentNote();
-                phaseIncrement = 0.0f;
-                prevValue = 0.0f;
-                t = 0.0f;
-                envelope.reset();
-                break;
-            }
+        }
+        else
+        {
+            clearCurrentNote();
+            phaseIncrement = 0.0f;
+            rotationPhaseIncrement = 0.0f;
+            prevValue = 0.0f;
+            t = 0.0f;
+            envelope.reset();
+            break;
         }
     }
 }

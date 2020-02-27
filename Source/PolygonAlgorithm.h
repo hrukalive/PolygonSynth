@@ -22,7 +22,7 @@ public:
         jassert(numVertices >= 2.0f);
 
         t -= rotation / MathConstants<float>::twoPi;
-        if (t < 0.0f)
+        while (t < 0.0f)
             t += 1.0f;
 
         jassert(t >= 0.0f && t <= 1.0f);

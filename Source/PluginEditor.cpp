@@ -180,7 +180,7 @@ void PolygonAudioProcessorEditor::resized()
     auto area = getBounds();
     area.reduce(10, 10);
 
-    auto titleAndSettingsArea = area.removeFromTop(70);
+    auto titleAndSettingsArea = area.removeFromTop(40);
     auto titleArea = titleAndSettingsArea.removeFromLeft(titlePath.getBounds().getWidth() + 10 + 100).removeFromTop(32);
     titleArea.removeFromLeft(titlePath.getBounds().getWidth() + 10);
     nameLabel.setBounds(titleArea.removeFromLeft(100));
@@ -189,9 +189,9 @@ void PolygonAudioProcessorEditor::resized()
     titleArea.removeFromLeft(titleArea.proportionOfWidth(0.5f));
 
     auto settingsArea = titleAndSettingsArea;
-    auto settingsTopArea = settingsArea.removeFromTop(settingsArea.proportionOfHeight(0.5));
+    auto settingsTopArea = settingsArea.removeFromTop(32);
 
-    auto outArea = settingsTopArea.removeFromRight(settingsTopArea.proportionOfWidth(0.5f));
+    auto outArea = settingsTopArea.removeFromRight(settingsTopArea.proportionOfWidth(0.4f));
     outGainLabel.setBounds(outArea.removeFromLeft(1.2f * getLabelWidth(outGainLabel)));
     outGainSlider.setBounds(outArea);
     oversamplingBox.setBounds(settingsTopArea.removeFromRight(settingsArea.proportionOfWidth(0.3f)));
@@ -243,7 +243,10 @@ void PolygonAudioProcessorEditor::resized()
     tmp = middleLeftBottomPanel.proportionOfHeight(0.5);
     auto fmRatioArea = middleLeftBottomPanel.removeFromTop(tmp);
     auto fmAmtArea = middleLeftBottomPanel.removeFromTop(tmp);
+    tmp = jmax(getLabelWidth(polygonFmRatioLabel), getLabelWidth(polygonFmAmtLabel));
+    polygonFmRatioLabel.setBounds(fmRatioArea.removeFromLeft(tmp));
     polygonFmRatioSlider.setBounds(fmRatioArea);
+    polygonFmAmtLabel.setBounds(fmAmtArea.removeFromLeft(tmp));
     polygonFmAmtSlider.setBounds(fmAmtArea);
 }
 

@@ -16,7 +16,7 @@ class PolygonVoice : public SynthesiserVoice
 {
 public:
     PolygonVoice(AudioProcessorValueTreeState&, ADSR::Parameters&, std::vector<float>&, std::vector<float>&);
-    ~PolygonVoice() = default;
+    ~PolygonVoice();
 
     bool canPlaySound(SynthesiserSound*) override;
     void startNote(int midiNoteNumber, float velocity, SynthesiserSound* sound, int currentPitchWheelPosition) override;
@@ -37,8 +37,8 @@ private:
 
     int currentNoteNumber{};
     float pitchBend{};
-    float phaseIncrement{};
-    float t{};
+    float phaseIncrement{}, rotationPhaseIncrement{}, fmPhaseIncrement{}, maxPhaseIncrIncrement{};
+    float t{}, t_rotation{}, t_mod{};
 
     float level{};
 

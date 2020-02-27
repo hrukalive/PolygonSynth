@@ -25,26 +25,16 @@ PolygonDisplay::PolygonDisplay(PolygonAudioProcessor& p) :
     oscilloscope2D->setVisible(true);
     oscilloscope2D->start();
 
-    p.addListener(this);
-
     startTimer(100);
 }
 
 PolygonDisplay::~PolygonDisplay()
 {
-    processor.removeListener(this);
     oscilloscope2D->stop();
 }
 
 void PolygonDisplay::paint (Graphics& g)
 {
-    /* This demo code just fills the component's background and
-       draws some placeholder text to get you started.
-
-       You should replace everything in this method with your own
-       drawing code..
-    */
-
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));   // clear the background
 
     g.setColour (Colours::grey);
@@ -57,7 +47,6 @@ void PolygonDisplay::paint (Graphics& g)
     g.setColour (Colours::white);
     auto width = getWidth() / 2 - 8, height = getHeight() / 2 - 8;
     auto radius = jmin(width, height) / 2;
-    auto amplitudeHeight = height / 2, amplitudeWidth = width / 2;
     Point<float> center1(getWidth() / 4, getHeight() / 4);
     auto deltaWidth = width / (float)waveY.size(), deltaHeight = height / (float)waveX.size();
     Point<float> starting1(width + 8 + 4, getHeight() / 4);
@@ -67,8 +56,8 @@ void PolygonDisplay::paint (Graphics& g)
     for (int i = 1; i < waveX.size(); i++)
     {
         g.fillEllipse(radius * waveX[i] + center1.getX(), radius * -waveY[i] + center1.getY(), 1, 1);
-        g.drawLine(Line<float>(starting1 + Point<float>((i - 1) * deltaWidth, amplitudeHeight * waveY[i - 1]), starting1 + Point<float>(i * deltaWidth, amplitudeHeight * waveY[i])));
-        g.drawLine(Line<float>(starting2 + Point<float>(amplitudeWidth * waveX[i - 1], (i - 1) * deltaHeight), starting2 + Point<float>(amplitudeWidth * waveX[i], i * deltaHeight)));
+        g.drawLine(Line<float>(starting1 + Point<float>((i - 1) * deltaWidth, -radius * waveY[i - 1]), starting1 + Point<float>(i * deltaWidth, -radius * waveY[i])));
+        g.drawLine(Line<float>(starting2 + Point<float>(radius * waveX[i - 1], (i - 1) * deltaHeight), starting2 + Point<float>(radius * waveX[i], i * deltaHeight)));
     }
 }
 
@@ -83,9 +72,9 @@ void PolygonDisplay::resized()
 
 void PolygonDisplay::timerCallback()
 {
-    if (changed)
+    //if (changed)
     {
-        changed = false;
+        //changed = false;
         auto result = processor.generateWavetable(resolution);
 
         {

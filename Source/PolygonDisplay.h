@@ -20,7 +20,7 @@ class PolygonAudioProcessor;
 //==============================================================================
 /*
 */
-class PolygonDisplay    : public Component, public Timer, public AudioProcessorListener
+class PolygonDisplay : public Component, public Timer
 {
 public:
     PolygonDisplay(PolygonAudioProcessor& processor);
@@ -30,13 +30,6 @@ public:
     void resized() override;
 
     void timerCallback() override;
-    void audioProcessorParameterChanged(AudioProcessor* /*processor*/, int /*parameterIndex*/, float /*newValue*/) override
-    {
-        changed = true;
-    }
-    void audioProcessorChanged(AudioProcessor* processor) override {}
-    void audioProcessorParameterChangeGestureBegin(AudioProcessor* processor, int parameterIndex) override {}
-    void audioProcessorParameterChangeGestureEnd(AudioProcessor* processor, int parameterIndex) override {}
 
 private:
     PolygonAudioProcessor& processor;

@@ -36,11 +36,6 @@ public:
         // Attach the OpenGL context but do not start [ see start() ]
         openGLContext.setRenderer(this);
         openGLContext.attachTo(*this);
-        
-        // Setup GUI Overlay Label: Status of Shaders, compiler errors, etc.
-        addAndMakeVisible (statusLabel);
-        statusLabel.setJustificationType (Justification::topLeft);
-        statusLabel.setFont (Font (14.0f));
     }
     
     ~Oscilloscope2D()
@@ -110,6 +105,7 @@ public:
         
         // Enable Alpha Blending
         glEnable (GL_BLEND);
+        glPointSize(10.0);
         glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         
         // Use Shader Program that's been defined
@@ -121,19 +117,15 @@ public:
             uniforms->resolution->set ((GLfloat) renderingScale * getWidth(), (GLfloat) renderingScale * getHeight());
         
         // Read in samples from ring buffer
-        if (uniforms->audioSampleData != nullptr)
+        if (uniforms->audioSampleDataX != nullptr && uniforms->audioSampleDataY != nullptr)
         {
             ringBuffer->readSamples (readBuffer, RING_BUFFER_READ_SIZE);
-            
-            FloatVectorOperations::clear (visualizationBuffer, RING_BUFFER_READ_SIZE);
-            
-            // Sum channels together
-            for (int i = 0; i < 2; ++i)
-            {
-                FloatVectorOperations::add (visualizationBuffer, readBuffer.getReadPointer(i, 0), RING_BUFFER_READ_SIZE);
-            }
-            
-            uniforms->audioSampleData->set (visualizationBuffer, 256);
+            FloatVectorOperations::clear(visualizationBufferX, RING_BUFFER_READ_SIZE);
+            FloatVectorOperations::clear(visualizationBufferY, RING_BUFFER_READ_SIZE);
+            FloatVectorOperations::add(visualizationBufferX, readBuffer.getReadPointer(0, 0), RING_BUFFER_READ_SIZE);
+            FloatVectorOperations::add(visualizationBufferY, readBuffer.getReadPointer(1, 0), RING_BUFFER_READ_SIZE);
+            uniforms->audioSampleDataX->set(visualizationBufferX, 256);
+            uniforms->audioSampleDataY->set(visualizationBufferY, 256);
         }
         
         // Define Vertices for a Square (the view plane)
@@ -175,7 +167,8 @@ public:
     
         // Draw Vertices
         //glDrawArrays (GL_TRIANGLES, 0, 6); // For just VBO's (Vertex Buffer Objects)
-        glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // For EBO's (Element Buffer Objects) (Indices)
+        //glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // For EBO's (Element Buffer Objects) (Indices)
+        glDrawArrays(GL_POINTS, 0, 4);
         
     
         
@@ -195,7 +188,6 @@ public:
     
     void resized () override
     {
-        statusLabel.setBounds (getLocalBounds().reduced (4).removeFromTop (75));
     }
     
 private:
@@ -218,29 +210,42 @@ private:
         
         fragmentShader =
         "uniform vec2  resolution;\n"
-        "uniform float audioSampleData[256];\n"
+        "uniform float audioSampleDataX[256];\n"
+        "uniform float audioSampleDataY[256];\n"
         "\n"
-        "void getAmplitudeForXPos (in float xPos, out float audioAmplitude)\n"
+        "void getAmplitudeForXPos (in float xPos, out float audioAmplitudeX)\n"
         "{\n"
         // Buffer size - 1
         "   float perfectSamplePosition = 255.0 * xPos / resolution.x;\n"
         "   int leftSampleIndex = int (floor (perfectSamplePosition));\n"
         "   int rightSampleIndex = int (ceil (perfectSamplePosition));\n"
-        "   audioAmplitude = mix (audioSampleData[leftSampleIndex], audioSampleData[rightSampleIndex], fract (perfectSamplePosition));\n"
+        "   audioAmplitudeX = mix (audioSampleDataX[leftSampleIndex], audioSampleDataX[rightSampleIndex], fract (perfectSamplePosition));\n"
+        "}\n"
+        "void getAmplitudeForYPos (in float yPos, out float audioAmplitudeY)\n"
+        "{\n"
+        // Buffer size - 1
+        "   float perfectSamplePosition = 255.0 * yPos / resolution.y;\n"
+        "   int leftSampleIndex = int (floor (perfectSamplePosition));\n"
+        "   int rightSampleIndex = int (ceil (perfectSamplePosition));\n"
+        "   audioAmplitudeY = mix (audioSampleDataY[leftSampleIndex], audioSampleDataY[rightSampleIndex], fract (perfectSamplePosition));\n"
         "}\n"
         "\n"
         "#define THICKNESS 0.02\n"
         "void main()\n"
         "{\n"
+        "    float x = gl_FragCoord.x / resolution.x;\n"
         "    float y = gl_FragCoord.y / resolution.y;\n"
-        "    float amplitude = 0.0;\n"
-        "    getAmplitudeForXPos (gl_FragCoord.x, amplitude);\n"
+        "    float amplitudeX = 0.0;\n"
+        "    float amplitudeY = 0.0;\n"
+        "    getAmplitudeForXPos (gl_FragCoord.x, amplitudeX);\n"
+        "    getAmplitudeForYPos (gl_FragCoord.y, amplitudeY);\n"
         "\n"
         // Centers & Reduces Wave Amplitude
-        "    amplitude = 0.5 - amplitude / 2.5;\n"
-        "    float r = abs (THICKNESS / (amplitude-y));\n"
+        "    amplitudeX = 0.5 - amplitudeX / 2.5;\n"
+        "    amplitudeY = 0.5 - amplitudeY / 2.5;\n"
+        "    float r = abs (THICKNESS / sqrt(pow(amplitudeX - x, 2) + pow(amplitudeY - y, 2)) );\n"
         "\n"
-        "gl_FragColor = vec4 (r - abs (r * 0.2), r - abs (r * 0.2), r - abs (r * 0.2), 1.0);\n"
+        "    gl_FragColor = vec4 (r - abs (r * 0.2), r - abs (r * 0.2), r - abs (r * 0.2), 1.0);\n"
         "}\n";
         
         ScopedPointer<OpenGLShaderProgram> newShader (new OpenGLShaderProgram (openGLContext));
@@ -262,10 +267,8 @@ private:
         else
         {
             statusText = newShader->getLastError();
+            AlertWindow::showMessageBoxAsync(AlertWindow::AlertIconType::WarningIcon, "Shader Error", statusText, "OK");
         }
-        
-        MessageManagerLock lock;
-        statusLabel.setText (statusText, dontSendNotification);
     }
     
 
@@ -278,13 +281,14 @@ private:
             //projectionMatrix = createUniform (openGLContext, shaderProgram, "projectionMatrix");
             //viewMatrix       = createUniform (openGLContext, shaderProgram, "viewMatrix");
             
-            resolution          = createUniform (openGLContext, shaderProgram, "resolution");
-            audioSampleData     = createUniform (openGLContext, shaderProgram, "audioSampleData");
+            resolution = createUniform(openGLContext, shaderProgram, "resolution");
+            audioSampleDataX = createUniform(openGLContext, shaderProgram, "audioSampleDataX");
+            audioSampleDataY = createUniform(openGLContext, shaderProgram, "audioSampleDataY");
             
         }
         
         //ScopedPointer<OpenGLShaderProgram::Uniform> projectionMatrix, viewMatrix;
-        ScopedPointer<OpenGLShaderProgram::Uniform> resolution, audioSampleData;
+        ScopedPointer<OpenGLShaderProgram::Uniform> resolution, audioSampleDataX, audioSampleDataY;
         
     private:
         static OpenGLShaderProgram::Uniform* createUniform (OpenGLContext& openGLContext,
@@ -313,12 +317,9 @@ private:
     // Audio Buffer
     std::shared_ptr<RingBuffer<GLfloat>>& ringBuffer;
     AudioBuffer<GLfloat> readBuffer;    // Stores data read from ring buffer
-    GLfloat visualizationBuffer [RING_BUFFER_READ_SIZE];    // Single channel to visualize
+    GLfloat visualizationBufferX[RING_BUFFER_READ_SIZE];    // Single channel to visualize
+    GLfloat visualizationBufferY[RING_BUFFER_READ_SIZE];    // Single channel to visualize
     
-    
-    
-    // Overlay GUI
-    Label statusLabel;
     
     
     /** DEV NOTE
