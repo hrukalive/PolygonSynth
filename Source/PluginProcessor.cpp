@@ -362,9 +362,14 @@ void PolygonAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
 
     ringBuffer = std::make_shared<RingBuffer<float>>(2, samplesPerBlock * 10);
 
+    const auto order = (float)parameters.getParameterAsValue("order").getValue();
+    const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
+    const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
+
     for (int i = 0; i < synthesiser.getNumVoices(); i++)
     {
-        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->resetSmoothedValues();
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->resetSmoothedValues(order, teeth, fold);
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->updatePhaseIncrement();
     }
 }
 
@@ -604,7 +609,8 @@ void PolygonAudioProcessor::updateVoiceParams()
     const auto fmamt = (float)parameters.getParameterAsValue("fmamt").getValue();
     for (int i = 0; i < synthesiser.getNumVoices(); i++)
     {
-        dynamic_cast<PolygonVoice*>(order, teeth, fold, rotation, fmratio, fmamt);
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->setSmoothedValues(order, teeth, fold, rotation, fmratio, fmamt);
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->updatePhaseIncrement();
     }
 }
 
@@ -663,14 +669,12 @@ std::pair<std::vector<float>, std::vector<float>> PolygonAudioProcessor::generat
     std::vector<float> waveX(wavetableSize, 0.0f);
     std::vector<float> waveY(wavetableSize, 0.0f);
 
+    const auto order = (float)parameters.getParameterAsValue("order").getValue();
+    const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
+    const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
     for (size_t i = 0; i < wavetableSize; i++)
     {
-        const auto value = PolygonSynthAlgorithm::getSample(
-            (float)i / (float)wavetableSize,
-            *parameters.getRawParameterValue("order"),
-            *parameters.getRawParameterValue("teeth"),
-            *parameters.getRawParameterValue("fold"),
-            *parameters.getRawParameterValue("rotation"));
+        const auto value = PolygonSynthAlgorithm::getSample((float)i / (float)wavetableSize, order, teeth, fold, 0);
         waveX[i] = value.getX();
         waveY[i] = value.getY();
     }

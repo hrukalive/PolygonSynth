@@ -13,6 +13,7 @@
 #include <JuceHeader.h>
 #include "Oscilloscope2D.h"
 #include "RingBuffer.h"
+#include "PolygonAlgorithm.h"
 
 class PolygonAudioProcessorEditor;
 class PolygonAudioProcessor;
@@ -20,7 +21,7 @@ class PolygonAudioProcessor;
 //==============================================================================
 /*
 */
-class PolygonDisplay : public Component, public Timer
+class PolygonDisplay : public Component, public Timer, public AudioProcessorValueTreeState::Listener
 {
 public:
     PolygonDisplay(PolygonAudioProcessor& processor);
@@ -28,17 +29,21 @@ public:
 
     void paint(Graphics&) override;
     void resized() override;
+    void parameterChanged(const String& /*parameterID*/, float /*newValue*/) override
+    {
+        changed = true;
+    }
 
     void timerCallback() override;
 
 private:
-    PolygonAudioProcessor& processor;
+    AudioProcessorValueTreeState& parameters;
     std::vector<float> waveX, waveY;
 
     std::shared_ptr<RingBuffer<float>>& ringBuffer;
     std::unique_ptr<Oscilloscope2D> oscilloscope2D;
 
-    size_t resolution{ 512 };
+    size_t resolution{ 1024 };
     bool changed{ true };
 
     CriticalSection waveformLock;

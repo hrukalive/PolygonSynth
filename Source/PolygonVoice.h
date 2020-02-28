@@ -21,7 +21,7 @@ public:
     bool canPlaySound(SynthesiserSound*) override;
     void startNote(int midiNoteNumber, float velocity, SynthesiserSound* sound, int currentPitchWheelPosition) override;
     void stopNote(float velocity, bool allowTailOff) override;
-    void resetSmoothedValues();
+    void resetSmoothedValues(float order, float teeth, float fold);
     void setSmoothedValues(float order, float teeth, float fold, float rotation, float fmRatio, float fmAmt);
 
     void updatePitchBend(int newPitchWheelValue);

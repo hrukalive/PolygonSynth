@@ -15,7 +15,7 @@
 
 //==============================================================================
 PolygonDisplay::PolygonDisplay(PolygonAudioProcessor& p) :
-    processor(p), ringBuffer(p.getRingBuffer())
+    parameters(p.getParameters()), ringBuffer(p.getRingBuffer())
 {
     waveX.resize(resolution, 0.0f);
     waveY.resize(resolution, 0.0f);
@@ -25,12 +25,19 @@ PolygonDisplay::PolygonDisplay(PolygonAudioProcessor& p) :
     oscilloscope2D->setVisible(true);
     oscilloscope2D->start();
 
+    parameters.addParameterListener("order", this);
+    parameters.addParameterListener("teeth", this);
+    parameters.addParameterListener("fold", this);
+
     startTimer(100);
 }
 
 PolygonDisplay::~PolygonDisplay()
 {
     oscilloscope2D->stop();
+    parameters.removeParameterListener("order", this);
+    parameters.removeParameterListener("teeth", this);
+    parameters.removeParameterListener("fold", this);
 }
 
 void PolygonDisplay::paint (Graphics& g)
@@ -72,16 +79,24 @@ void PolygonDisplay::resized()
 
 void PolygonDisplay::timerCallback()
 {
-    //if (changed)
+    if (changed)
     {
-        //changed = false;
-        auto result = processor.generateWavetable(resolution);
+        changed = false;
+
+        const auto order = (float)parameters.getParameterAsValue("order").getValue();
+        const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
+        const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
 
         {
             ScopedLock lock(waveformLock);
-            waveX = result.first;
-            waveY = result.second;
+            for (size_t i = 0; i < resolution; i++)
+            {
+                const auto value = PolygonSynthAlgorithm::getSample((float)i / (float)resolution, order, teeth, fold, 0);
+                waveX[i] = value.getX();
+                waveY[i] = value.getY();
+            }
         }
+
         repaint();
     }
 }

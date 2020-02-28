@@ -71,6 +71,7 @@ public:
     std::vector<float>& getWavetableX() { return waveX; }
     std::vector<float>& getWavetableY() { return waveY; }
     std::shared_ptr<RingBuffer<float>>& getRingBuffer() { return ringBuffer; }
+    AudioProcessorValueTreeState& getParameters() { return parameters; }
 
 private:
     AudioProcessorValueTreeState parameters;

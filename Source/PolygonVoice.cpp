@@ -40,21 +40,22 @@ void PolygonVoice::startNote(int midiNoteNumber, float velocity, SynthesiserSoun
     envelope.noteOn();
 }
 
-void PolygonVoice::resetSmoothedValues()
+void PolygonVoice::resetSmoothedValues(float order, float teeth, float fold)
 {
-    this->order.reset(getSampleRate(), 0.05);
-    this->teeth.reset(getSampleRate(), 0.05);
-    this->fold.reset(getSampleRate(), 0.05);
+    this->order.reset(getSampleRate(), 0.1);
+    this->teeth.reset(getSampleRate(), 0.1);
+    this->fold.reset(getSampleRate(), 0.1);
+
+    this->order.setCurrentAndTargetValue(order);
+    this->teeth.setCurrentAndTargetValue(teeth);
+    this->fold.setCurrentAndTargetValue(fold);
 }
 
 void PolygonVoice::setSmoothedValues(float order, float teeth, float fold, float rotation, float fmRatio, float fmAmt)
 {
-    this->order.reset(getSampleRate(), 0.05);
-    this->order.setCurrentAndTargetValue(order);
-    this->teeth.reset(getSampleRate(), 0.05);
-    this->teeth.setCurrentAndTargetValue(teeth);
-    this->fold.reset(getSampleRate(), 0.05);
-    this->fold.setCurrentAndTargetValue(fold);
+    this->order.setTargetValue(order);
+    this->teeth.setTargetValue(teeth);
+    this->fold.setTargetValue(fold);
     this->rotation = rotation;
     this->fmRatio = fmRatio;
     this->fmAmt = fmAmt;

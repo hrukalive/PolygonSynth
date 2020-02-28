@@ -19,7 +19,8 @@ public:
 
     static inline Point<float> getSample(float t, float numVertices, float teeth, float fold, float rotation)
     {
-        jassert(numVertices >= 2.0f);
+        if (numVertices < 2.0f)
+            numVertices = 2.0f;
 
         t -= rotation / MathConstants<float>::twoPi;
         while (t < 0.0f)
@@ -42,6 +43,7 @@ public:
             auto int_angle = deltaAngle * std::floorf(numVertices);
             auto proportion = std::sinf(int_angle) / (fullLength * std::sinf(int_angle - std::acosf(std::sqrtf(arg_arccos))));
             val = Line<float>(p0 * (1 - teeth), p1 * (1 - (1 - proportion) * teeth)).getPointAlongLineProportionally(proportion * (n - floor_n) / (numVertices - floor_n));
+            jassert(!isnan(val.getX()) && !isnan(val.getY()));
         }
         else
         {
