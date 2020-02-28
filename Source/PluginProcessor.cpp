@@ -361,6 +361,11 @@ void PolygonAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     dcBlockerR.reset();
 
     ringBuffer = std::make_shared<RingBuffer<float>>(2, samplesPerBlock * 10);
+
+    for (int i = 0; i < synthesiser.getNumVoices(); i++)
+    {
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->resetSmoothedValues();
+    }
 }
 
 void PolygonAudioProcessor::releaseResources()
@@ -403,6 +408,7 @@ void PolygonAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer
         buffer.clear (i, 0, buffer.getNumSamples());
 
     updateEnvParams();
+    updateVoiceParams();
 
     buffer.clear(0, 0, buffer.getNumSamples());
     buffer.clear(1, 0, buffer.getNumSamples());
@@ -586,6 +592,20 @@ void PolygonAudioProcessor::updateEnvParams()
     envParams.decay = *parameters.getRawParameterValue("decay") / 1000.0f;
     envParams.sustain = *parameters.getRawParameterValue("sustain");
     envParams.release = *parameters.getRawParameterValue("release") / 1000.0f;
+}
+
+void PolygonAudioProcessor::updateVoiceParams()
+{
+    const auto order = (float)parameters.getParameterAsValue("order").getValue();
+    const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
+    const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
+    const auto rotation = (float)parameters.getParameterAsValue("rotation").getValue();
+    const auto fmratio = (float)parameters.getParameterAsValue("fmratio").getValue();
+    const auto fmamt = (float)parameters.getParameterAsValue("fmamt").getValue();
+    for (int i = 0; i < synthesiser.getNumVoices(); i++)
+    {
+        dynamic_cast<PolygonVoice*>(order, teeth, fold, rotation, fmratio, fmamt);
+    }
 }
 
 void PolygonAudioProcessor::setNumVoices(int newNumVoices)

@@ -35,9 +35,29 @@ void PolygonVoice::startNote(int midiNoteNumber, float velocity, SynthesiserSoun
     currentNoteNumber = midiNoteNumber;
     updatePitchBend(currentPitchWheelPosition);
 
-    updatePhaseIncrement();
+    //updatePhaseIncrement();
     level = velocity;
     envelope.noteOn();
+}
+
+void PolygonVoice::resetSmoothedValues()
+{
+    this->order.reset(getSampleRate(), 0.05);
+    this->teeth.reset(getSampleRate(), 0.05);
+    this->fold.reset(getSampleRate(), 0.05);
+}
+
+void PolygonVoice::setSmoothedValues(float order, float teeth, float fold, float rotation, float fmRatio, float fmAmt)
+{
+    this->order.reset(getSampleRate(), 0.05);
+    this->order.setCurrentAndTargetValue(order);
+    this->teeth.reset(getSampleRate(), 0.05);
+    this->teeth.setCurrentAndTargetValue(teeth);
+    this->fold.reset(getSampleRate(), 0.05);
+    this->fold.setCurrentAndTargetValue(fold);
+    this->rotation = rotation;
+    this->fmRatio = fmRatio;
+    this->fmAmt = fmAmt;
 }
 
 void PolygonVoice::stopNote(float velocity, bool allowTailOff)
@@ -77,10 +97,10 @@ void PolygonVoice::updatePhaseIncrement()
 {
     const auto frequencyOfA = 440.0f;
     const auto frequency = frequencyOfA * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
-    //fmPhaseIncrement = (frequency * (*parameters.getRawParameterValue("fmratio"))) / getSampleRate();
-    //maxPhaseIncrIncrement = (frequency * (*parameters.getRawParameterValue("fmratio"))) * (*parameters.getRawParameterValue("fmamt")) / getSampleRate();
+    fmPhaseIncrement = (frequency * fmRatio) / getSampleRate();
+    maxPhaseIncrIncrement = frequency * fmRatio * fmAmt / getSampleRate();
     phaseIncrement = (frequency + maxPhaseIncrIncrement * std::sinf(2 * MathConstants<float>::twoPi * t_mod)) / getSampleRate();
-    //rotationPhaseIncrement = (*parameters.getRawParameterValue("rotation")) / getSampleRate();
+    rotationPhaseIncrement = rotation / getSampleRate();
 }
 
 void PolygonVoice::pitchWheelMoved(int newPitchWheelValue)
@@ -137,9 +157,9 @@ void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSa
             {
                 const auto value = PolygonSynthAlgorithm::getSample(
                     t,
-                    3,//parameters.getParameterAsValue("order").getValue(),
-                    0,//parameters.getParameterAsValue("teeth").getValue(),
-                    1,//parameters.getParameterAsValue("fold").getValue(),
+                    order.getNextValue(),
+                    teeth.getNextValue(),
+                    fold.getNextValue(),
                     t_rotation);
 
                 t_mod += fmPhaseIncrement;

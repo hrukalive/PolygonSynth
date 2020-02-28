@@ -21,6 +21,8 @@ public:
     bool canPlaySound(SynthesiserSound*) override;
     void startNote(int midiNoteNumber, float velocity, SynthesiserSound* sound, int currentPitchWheelPosition) override;
     void stopNote(float velocity, bool allowTailOff) override;
+    void resetSmoothedValues();
+    void setSmoothedValues(float order, float teeth, float fold, float rotation, float fmRatio, float fmAmt);
 
     void updatePitchBend(int newPitchWheelValue);
     void updatePhaseIncrement();
@@ -34,6 +36,9 @@ public:
 private:
     AudioProcessorValueTreeState& parameters;
     std::vector<float> &wavetableL, &wavetableR;
+
+    SmoothedValue<float> order, teeth, fold;
+    float rotation, fmRatio, fmAmt;
 
     int currentNoteNumber{};
     float pitchBend{};
