@@ -360,7 +360,14 @@ void PolygonAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     dcBlockerL.reset();
     dcBlockerR.reset();
 
+    if (editor)
+    {
+        editor->stopDrawing();
+        editor->updateBlocksize(samplesPerBlock);
+    }
     ringBuffer = std::make_shared<RingBuffer<float>>(2, samplesPerBlock * 10);
+    if (editor)
+        editor->startDrawing();
 
     const auto order = (float)parameters.getParameterAsValue("order").getValue();
     const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
@@ -542,7 +549,12 @@ bool PolygonAudioProcessor::hasEditor() const
 
 AudioProcessorEditor* PolygonAudioProcessor::createEditor()
 {
-    return new PolygonAudioProcessorEditor (*this, parameters, keyboardState);
+    if (editor == nullptr)
+        editor = new PolygonAudioProcessorEditor (*this, parameters, keyboardState);
+    editor->stopDrawing();
+    editor->updateBlocksize(getBlockSize());
+    editor->startDrawing();
+    return editor;
 }
 
 //==============================================================================

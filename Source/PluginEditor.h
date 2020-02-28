@@ -39,6 +39,10 @@ public:
     //==============================================================================
     void sliderValueChanged(Slider* slider) override;
 
+    void stopDrawing() { display->stopDrawing(); }
+    void startDrawing() { display->startDrawing(); }
+    void updateBlocksize(float bs) { display->updateBlocksize(bs); }
+
 private:
     using SliderAttachment = AudioProcessorValueTreeState::SliderAttachment;
     using ComboBoxAttachment = AudioProcessorValueTreeState::ComboBoxAttachment;

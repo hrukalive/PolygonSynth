@@ -15,6 +15,8 @@
 #include "DcBlocker.h"
 #include "RingBuffer.h"
 
+class PolygonAudioProcessorEditor;
+
 //==============================================================================
 /**
 */
@@ -73,9 +75,12 @@ public:
     std::shared_ptr<RingBuffer<float>>& getRingBuffer() { return ringBuffer; }
     AudioProcessorValueTreeState& getParameters() { return parameters; }
 
+    void editorClosed() { editor = nullptr; }
+
 private:
     AudioProcessorValueTreeState parameters;
     MidiKeyboardState keyboardState;
+    PolygonAudioProcessorEditor* editor{ nullptr };
 
     int numVoices{ 10 };
     ADSR::Parameters envParams;

@@ -21,6 +21,7 @@ PolygonDisplay::PolygonDisplay(PolygonAudioProcessor& p) :
     waveY.resize(resolution, 0.0f);
 
     oscilloscope2D = std::make_unique<Oscilloscope2D>(ringBuffer);
+    oscilloscope2D->updateBlocksize(256);// p.getBlockSize());
     addChildComponent(*oscilloscope2D);
     oscilloscope2D->setVisible(true);
     oscilloscope2D->start();

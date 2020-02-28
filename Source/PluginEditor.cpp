@@ -128,6 +128,7 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
 PolygonAudioProcessorEditor::~PolygonAudioProcessorEditor()
 {
     display = nullptr;
+    processor.editorClosed();
 }
 
 void PolygonAudioProcessorEditor::makeLabelUpperCase(Label& label)

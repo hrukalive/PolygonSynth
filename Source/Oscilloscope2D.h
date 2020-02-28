@@ -28,8 +28,10 @@ class Oscilloscope2D :  public Component,
 public:
     
     Oscilloscope2D (std::shared_ptr<RingBuffer<GLfloat>>& ringBuffer)
-    : readBuffer (2, RING_BUFFER_READ_SIZE), ringBuffer(ringBuffer)
+    : ringBuffer(ringBuffer)
     {
+        vertices = new GLfloat[RING_BUFFER_READ_SIZE * 3];
+
         // Sets the OpenGL version to 3.2
         openGLContext.setOpenGLVersionRequired (OpenGLContext::OpenGLVersion::openGL3_2);
         
@@ -46,6 +48,7 @@ public:
         
         // Detach ringBuffer
         ringBuffer = nullptr;
+        delete[] vertices;
     }
     
     //==========================================================================
@@ -95,6 +98,7 @@ public:
     void renderOpenGL() override
     {
         jassert (OpenGLHelpers::isContextActive());
+        //const int RING_BUFFER_READ_SIZE = 256;// blockSize.get();
         
         // Setup Viewport
         const float renderingScale = (float) openGLContext.getRenderingScale();
@@ -117,24 +121,23 @@ public:
             uniforms->resolution->set ((GLfloat) renderingScale * getWidth(), (GLfloat) renderingScale * getHeight());
         
         // Read in samples from ring buffer
-        if (uniforms->audioSampleDataX != nullptr && uniforms->audioSampleDataY != nullptr)
+        ringBuffer->readSamples (readBuffer, RING_BUFFER_READ_SIZE);
+        auto xPtr = readBuffer.getReadPointer(0, 0), yPtr = readBuffer.getReadPointer(1, 0);
+        GLfloat vertices[256*3];
+        for (int i = 0; i < RING_BUFFER_READ_SIZE; i++)
         {
-            ringBuffer->readSamples (readBuffer, RING_BUFFER_READ_SIZE);
-            FloatVectorOperations::clear(visualizationBufferX, RING_BUFFER_READ_SIZE);
-            FloatVectorOperations::clear(visualizationBufferY, RING_BUFFER_READ_SIZE);
-            FloatVectorOperations::add(visualizationBufferX, readBuffer.getReadPointer(0, 0), RING_BUFFER_READ_SIZE);
-            FloatVectorOperations::add(visualizationBufferY, readBuffer.getReadPointer(1, 0), RING_BUFFER_READ_SIZE);
-            uniforms->audioSampleDataX->set(visualizationBufferX, 256);
-            uniforms->audioSampleDataY->set(visualizationBufferY, 256);
+            vertices[i * 3] = xPtr[i];
+            vertices[i * 3 + 1] = yPtr[i];
+            vertices[i * 3 + 2] = 0.0f;
         }
         
         // Define Vertices for a Square (the view plane)
-        GLfloat vertices[] = {
-            1.0f,   1.0f,  0.0f,  // Top Right
-            1.0f,  -1.0f,  0.0f,  // Bottom Right
-            -1.0f, -1.0f,  0.0f,  // Bottom Left
-            -1.0f,  1.0f,  0.0f   // Top Left
-        };
+        //GLfloat vertices[] = {
+        //    1.0f,   1.0f,  0.0f,  // Top Right
+        //    1.0f,  -1.0f,  0.0f,  // Bottom Right
+        //    -1.0f, -1.0f,  0.0f,  // Bottom Left
+        //    -1.0f,  1.0f,  0.0f   // Top Left
+        //};
         // Define Which Vertex Indexes Make the Square
         GLuint indices[] = {  // Note that we start from 0!
             0, 1, 3,   // First Triangle
@@ -154,8 +157,8 @@ public:
                                                                     // test this
         
         // EBO (Element Buffer Object) - Bind and Write to Buffer
-        openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, EBO);
-        openGLContext.extensions.glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STREAM_DRAW);
+        //openGLContext.extensions.glBindBuffer (GL_ELEMENT_ARRAY_BUFFER, EBO);
+        //openGLContext.extensions.glBufferData (GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STREAM_DRAW);
                                                                     // GL_DYNAMIC_DRAW or GL_STREAM_DRAW
                                                                     // Don't we want GL_DYNAMIC_DRAW since this
                                                                     // vertex data will be changing alot??
@@ -168,7 +171,7 @@ public:
         // Draw Vertices
         //glDrawArrays (GL_TRIANGLES, 0, 6); // For just VBO's (Vertex Buffer Objects)
         //glDrawElements (GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // For EBO's (Element Buffer Objects) (Indices)
-        glDrawArrays(GL_POINTS, 0, 4);
+        glDrawArrays(GL_POINTS, 0, RING_BUFFER_READ_SIZE);
         
     
         
@@ -188,6 +191,16 @@ public:
     
     void resized () override
     {
+    }
+
+    void updateBlocksize(float bs)
+    {
+        stop();
+        blockSize.set(bs);
+        //if (vertices != nullptr)
+        //    delete[] vertices;
+        //vertices = new GLfloat[blockSize.get() * 3];
+        readBuffer = AudioBuffer<GLfloat>(2, blockSize.get());
     }
     
 private:
@@ -210,42 +223,11 @@ private:
         
         fragmentShader =
         "uniform vec2  resolution;\n"
-        "uniform float audioSampleDataX[256];\n"
-        "uniform float audioSampleDataY[256];\n"
-        "\n"
-        "void getAmplitudeForXPos (in float xPos, out float audioAmplitudeX)\n"
-        "{\n"
-        // Buffer size - 1
-        "   float perfectSamplePosition = 255.0 * xPos / resolution.x;\n"
-        "   int leftSampleIndex = int (floor (perfectSamplePosition));\n"
-        "   int rightSampleIndex = int (ceil (perfectSamplePosition));\n"
-        "   audioAmplitudeX = mix (audioSampleDataX[leftSampleIndex], audioSampleDataX[rightSampleIndex], fract (perfectSamplePosition));\n"
-        "}\n"
-        "void getAmplitudeForYPos (in float yPos, out float audioAmplitudeY)\n"
-        "{\n"
-        // Buffer size - 1
-        "   float perfectSamplePosition = 255.0 * yPos / resolution.y;\n"
-        "   int leftSampleIndex = int (floor (perfectSamplePosition));\n"
-        "   int rightSampleIndex = int (ceil (perfectSamplePosition));\n"
-        "   audioAmplitudeY = mix (audioSampleDataY[leftSampleIndex], audioSampleDataY[rightSampleIndex], fract (perfectSamplePosition));\n"
-        "}\n"
         "\n"
         "#define THICKNESS 0.02\n"
         "void main()\n"
         "{\n"
-        "    float x = gl_FragCoord.x / resolution.x;\n"
-        "    float y = gl_FragCoord.y / resolution.y;\n"
-        "    float amplitudeX = 0.0;\n"
-        "    float amplitudeY = 0.0;\n"
-        "    getAmplitudeForXPos (gl_FragCoord.x, amplitudeX);\n"
-        "    getAmplitudeForYPos (gl_FragCoord.y, amplitudeY);\n"
-        "\n"
-        // Centers & Reduces Wave Amplitude
-        "    amplitudeX = 0.5 - amplitudeX / 2.5;\n"
-        "    amplitudeY = 0.5 - amplitudeY / 2.5;\n"
-        "    float r = abs (THICKNESS / sqrt(pow(amplitudeX - x, 2) + pow(amplitudeY - y, 2)) );\n"
-        "\n"
-        "    gl_FragColor = vec4 (r - abs (r * 0.2), r - abs (r * 0.2), r - abs (r * 0.2), 1.0);\n"
+        "    gl_FragColor = vec4 (1.0,1.0,0.0,1.0);\n"
         "}\n";
         
         ScopedPointer<OpenGLShaderProgram> newShader (new OpenGLShaderProgram (openGLContext));
@@ -282,8 +264,6 @@ private:
             //viewMatrix       = createUniform (openGLContext, shaderProgram, "viewMatrix");
             
             resolution = createUniform(openGLContext, shaderProgram, "resolution");
-            audioSampleDataX = createUniform(openGLContext, shaderProgram, "audioSampleDataX");
-            audioSampleDataY = createUniform(openGLContext, shaderProgram, "audioSampleDataY");
             
         }
         
@@ -306,6 +286,9 @@ private:
     // OpenGL Variables
     OpenGLContext openGLContext;
     GLuint VBO, VAO, EBO;
+
+    Atomic<int> blockSize{ 256 };
+    GLfloat* vertices{ nullptr };
     
     ScopedPointer<OpenGLShaderProgram> shader;
     ScopedPointer<Uniforms> uniforms;
@@ -317,8 +300,6 @@ private:
     // Audio Buffer
     std::shared_ptr<RingBuffer<GLfloat>>& ringBuffer;
     AudioBuffer<GLfloat> readBuffer;    // Stores data read from ring buffer
-    GLfloat visualizationBufferX[RING_BUFFER_READ_SIZE];    // Single channel to visualize
-    GLfloat visualizationBufferY[RING_BUFFER_READ_SIZE];    // Single channel to visualize
     
     
     

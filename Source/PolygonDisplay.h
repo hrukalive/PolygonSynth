@@ -36,6 +36,10 @@ public:
 
     void timerCallback() override;
 
+    void stopDrawing() { oscilloscope2D->stop(); }
+    void startDrawing() { oscilloscope2D->start(); }
+    void updateBlocksize(float bs) { oscilloscope2D->updateBlocksize(bs); }
+
 private:
     AudioProcessorValueTreeState& parameters;
     std::vector<float> waveX, waveY;

@@ -61,7 +61,7 @@ public:
         while (waveY < -1)
             waveY += 2.0f;
 
-        jassert(!isnan(waveX) && !isnan(waveY));
+        jassert(!isnan(waveX) && !isnan(waveY) && fabsf(waveX) <= 1.0f && std::fabsf(waveY) <= 1.0f);
 
         return Point<float>(waveX, waveY);
     }
