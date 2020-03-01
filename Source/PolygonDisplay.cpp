@@ -51,8 +51,21 @@ void PolygonDisplay::paint (Graphics& g)
     g.setColour(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
     g.fillRect(getLocalBounds().reduced(1));
 
+    auto area = getLocalBounds();
+    auto top = area.removeFromTop(area.proportionOfHeight(0.5));
+    auto topLeft = top.removeFromLeft(top.proportionOfWidth(0.5));
+    top.reduce(4, 4);
+    topLeft.reduce(4, 4);
+    auto bottomLeft = area.removeFromLeft(area.proportionOfWidth(0.5));
+    area.reduce(4, 4);
+    bottomLeft.reduce(4, 4);
+    g.setColour(Colours::black);
+    g.fillRect(top);
+    g.fillRect(topLeft);
+    g.fillRect(area);
+    g.fillRect(bottomLeft);
+
     ScopedLock lock(waveformLock);
-    g.setColour (Colours::white);
     auto width = getWidth() / 2 - 8, height = getHeight() / 2 - 8;
     auto radius = jmin(width, height) / 2;
     Point<float> center1(getWidth() / 4, getHeight() / 4);
@@ -60,12 +73,13 @@ void PolygonDisplay::paint (Graphics& g)
     Point<float> starting1(width + 8 + 4, getHeight() / 4);
     Point<float> starting2(getWidth() / 4, height + 8 + 4);
 
-    g.fillEllipse(radius * waveX[0] + center1.getX(), radius * -waveY[0] + center1.getY(), 1, 1);
+    g.setColour(Colours::yellow);
+    g.fillEllipse(radius * waveX[0] + center1.getX(), radius * -waveY[0] + center1.getY(), 4, 4);
     for (int i = 1; i < waveX.size(); i++)
     {
-        g.fillEllipse(radius * waveX[i] + center1.getX(), radius * -waveY[i] + center1.getY(), 1, 1);
-        g.drawLine(Line<float>(starting1 + Point<float>((i - 1) * deltaWidth, -radius * waveY[i - 1]), starting1 + Point<float>(i * deltaWidth, -radius * waveY[i])));
-        g.drawLine(Line<float>(starting2 + Point<float>(radius * waveX[i - 1], (i - 1) * deltaHeight), starting2 + Point<float>(radius * waveX[i], i * deltaHeight)));
+        g.fillEllipse(radius * waveX[i] + center1.getX(), radius * -waveY[i] + center1.getY(), 4, 4);
+        g.drawLine(Line<float>(starting1 + Point<float>((i - 1) * deltaWidth, -radius * waveY[i - 1]), starting1 + Point<float>(i * deltaWidth, -radius * waveY[i])), 2);
+        g.drawLine(Line<float>(starting2 + Point<float>(radius * waveX[i - 1], (i - 1) * deltaHeight), starting2 + Point<float>(radius * waveX[i], i * deltaHeight)), 2);
     }
 }
 

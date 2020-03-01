@@ -103,7 +103,6 @@ private:
     Slider polygonFmAmtSlider;
     std::unique_ptr<SliderAttachment> polygonFmAmtAttachment;
 
-    Label nameLabel;
     Path titlePath;
 
     std::unique_ptr<PolygonDisplay> display;

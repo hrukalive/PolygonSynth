@@ -24,12 +24,6 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
     glyph.addLineOfText(Font(32, Font::bold), "POLYGOGO SIM", 12, 38);
     glyph.createPath(titlePath);
 
-    nameLabel.setFont(Font(16, Font::bold));
-    nameLabel.setText("Dachun Sun", dontSendNotification);
-    nameLabel.setColour(Label::textColourId, Colour(0xffdcc296));
-    nameLabel.setJustificationType(Justification::bottomLeft);
-    addAndMakeVisible(nameLabel);
-
     polygonOrderLabel.setText("Order", dontSendNotification);
     makeLabelUpperCase(polygonOrderLabel);
     addAndMakeVisible(polygonOrderLabel);
@@ -169,11 +163,8 @@ void PolygonAudioProcessorEditor::paint (Graphics& g)
     // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
 
-    g.setColour(Colour(0xff97b0c4));
-    g.fillPath(titlePath);
-
     g.setColour(Colour(0xffdcc296));
-    g.strokePath(titlePath, PathStrokeType(1.0f));
+    g.fillPath(titlePath);
 }
 
 void PolygonAudioProcessorEditor::resized()
@@ -184,7 +175,6 @@ void PolygonAudioProcessorEditor::resized()
     auto titleAndSettingsArea = area.removeFromTop(40);
     auto titleArea = titleAndSettingsArea.removeFromLeft(titlePath.getBounds().getWidth() + 10 + 100).removeFromTop(32);
     titleArea.removeFromLeft(titlePath.getBounds().getWidth() + 10);
-    nameLabel.setBounds(titleArea.removeFromLeft(100));
 
     // padding
     titleArea.removeFromLeft(titleArea.proportionOfWidth(0.5f));
