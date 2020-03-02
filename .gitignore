@@ -30,3 +30,7 @@
 *.exe
 *.out
 *.app
+
+# JUCE
+Builds/
+JuceLibraryCode/
