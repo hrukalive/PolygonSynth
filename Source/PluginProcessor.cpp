@@ -12,7 +12,6 @@
 #include "PluginEditor.h"
 #include "PolygonVoice.h"
 #include "PolygonSound.h"
-#include "PolygonAlgorithm.h"
 #include "hiir/PolyphaseIir2Designer.h"
 
 
@@ -245,12 +244,23 @@ PolygonAudioProcessor::PolygonAudioProcessor()
     parameters(*this, nullptr, Identifier("PolygonSynth"), createParameterLayout())
 #endif
 {
+    gainParameter = parameters.getRawParameterValue("outgain");
+    attackParameter = parameters.getRawParameterValue("attack");
+    decayParameter = parameters.getRawParameterValue("decay");
+    sustainParameter = parameters.getRawParameterValue("sustain");
+    releaseParameter = parameters.getRawParameterValue("release");
+
+    orderParameter = parameters.getRawParameterValue("order");
+    teethParameter = parameters.getRawParameterValue("teeth");
+    foldParameter = parameters.getRawParameterValue("fold");
+    rotationParameter = parameters.getRawParameterValue("rotation");
+    fmRatioParameter = parameters.getRawParameterValue("fmratio");
+    fmAmtParameter = parameters.getRawParameterValue("fmamt");
+
     Process::setPriority(Process::ProcessPriority::RealtimePriority);
-    waveX.resize(nextWavetableSize, 0.0f);
-    waveY.resize(nextWavetableSize, 0.0f);
     for (auto i = 0; i < numVoices; ++i)
     {
-        synthesiser.addVoice(new PolygonVoice(parameters, envParams, waveX, waveY));
+        synthesiser.addVoice(new PolygonVoice(parameters, envParams, cache));
     }
     synthesiser.addSound(new PolygonSound());
 }
@@ -369,13 +379,9 @@ void PolygonAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBloc
     if (editor)
         editor->startDrawing();
 
-    const auto order = (float)parameters.getParameterAsValue("order").getValue();
-    const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
-    const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
-
     for (int i = 0; i < synthesiser.getNumVoices(); i++)
     {
-        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->resetSmoothedValues(order, teeth, fold);
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->resetSmoothedValues(*orderParameter, *teethParameter, *foldParameter);
         dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->updatePhaseIncrement();
     }
 }
@@ -451,90 +457,50 @@ void PolygonAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuffer
         }
     }
 
-    auto bufferWrite = buffer.getWritePointer(0);
-    auto oversampleWrite = oversampledBuffer.getWritePointer(0);
+    auto bufferWriteL = buffer.getWritePointer(0);
+    auto oversampleWriteL = oversampledBuffer.getWritePointer(0);
+    auto bufferWriteR = buffer.getWritePointer(1);
+    auto oversampleWriteR = oversampledBuffer.getWritePointer(1);
     if (oversampleFactor >= 16)
     {
         //16x to 8x
-        downsampler4L.process_block(oversampleWrite,
-            oversampleWrite,
-            buffer.getNumSamples() * 8);
+        downsampler4L.process_block(oversampleWriteL, oversampleWriteL, buffer.getNumSamples() * 8);
+        downsampler4R.process_block(oversampleWriteR, oversampleWriteR, buffer.getNumSamples() * 8);
     }
     if (oversampleFactor >= 8)
     {
         //8x to 4x
-        downsampler3L.process_block(oversampleWrite,
-            oversampleWrite,
-            buffer.getNumSamples() * 4);
+        downsampler3L.process_block(oversampleWriteL, oversampleWriteL, buffer.getNumSamples() * 4);
+        downsampler3R.process_block(oversampleWriteR, oversampleWriteR, buffer.getNumSamples() * 4);
     }
     if (oversampleFactor >= 4)
     {
         //4x to 2x
-        downsampler2L.process_block(oversampleWrite,
-            oversampleWrite,
-            buffer.getNumSamples() * 2);
+        downsampler2L.process_block(oversampleWriteL, oversampleWriteL, buffer.getNumSamples() * 2);
+        downsampler2R.process_block(oversampleWriteR, oversampleWriteR, buffer.getNumSamples() * 2);
     }
     if (oversampleFactor >= 2)
     {
         //2x to 1x
-        downsamplerL.process_block(bufferWrite, // out
-            oversampleWrite, // in
-            buffer.getNumSamples());
+        downsamplerL.process_block(bufferWriteL, oversampleWriteL, buffer.getNumSamples());
+        downsamplerR.process_block(bufferWriteR, oversampleWriteR, buffer.getNumSamples());
     }
     else
     {
         //1x to 1x
         buffer.copyFrom(0, 0, oversampledBuffer, 0, 0, buffer.getNumSamples());
-    }
-
-    // filter dc offset
-    for (int i = 0; i < buffer.getNumSamples(); ++i)
-        bufferWrite[i] = dcBlockerL.pushSample(bufferWrite[i]);
-
-
-    bufferWrite = buffer.getWritePointer(1);
-    oversampleWrite = oversampledBuffer.getWritePointer(1);
-    if (oversampleFactor >= 16)
-    {
-        //16x to 8x
-        downsampler4R.process_block(oversampleWrite,
-            oversampleWrite,
-            buffer.getNumSamples() * 8);
-    }
-    if (oversampleFactor >= 8)
-    {
-        //8x to 4x
-        downsampler3R.process_block(oversampleWrite,
-            oversampleWrite,
-            buffer.getNumSamples() * 4);
-    }
-    if (oversampleFactor >= 4)
-    {
-        //4x to 2x
-        downsampler2R.process_block(oversampleWrite,
-            oversampleWrite,
-            buffer.getNumSamples() * 2);
-    }
-    if (oversampleFactor >= 2)
-    {
-        //2x to 1x
-        downsamplerR.process_block(bufferWrite, // out
-            oversampleWrite, // in
-            buffer.getNumSamples());
-    }
-    else
-    {
-        //1x to 1x
         buffer.copyFrom(1, 0, oversampledBuffer, 1, 0, buffer.getNumSamples());
     }
 
     // filter dc offset
     for (int i = 0; i < buffer.getNumSamples(); ++i)
-        bufferWrite[i] = dcBlockerR.pushSample(bufferWrite[i]);
+    {
+        bufferWriteL[i] = dcBlockerL.pushSample(bufferWriteL[i]);
+        bufferWriteR[i] = dcBlockerR.pushSample(bufferWriteR[i]);
+    }
 
-    // todo smoothing
-    buffer.applyGain(0, 0, buffer.getNumSamples(), parameters.getParameterAsValue("outgain").getValue());
-    buffer.applyGain(1, 0, buffer.getNumSamples(), parameters.getParameterAsValue("outgain").getValue());
+    buffer.applyGain(0, 0, buffer.getNumSamples(), *gainParameter);
+    buffer.applyGain(1, 0, buffer.getNumSamples(), *gainParameter);
 
     ringBuffer->writeSamples(buffer, 0, buffer.getNumSamples());
 
@@ -560,16 +526,10 @@ AudioProcessorEditor* PolygonAudioProcessor::createEditor()
 //==============================================================================
 void PolygonAudioProcessor::getStateInformation (MemoryBlock& destData)
 {
-    // You should use this method to store your parameters in the memory block.
-    // You could do that either as raw data, or use the XML or ValueTree classes
-    // as intermediaries to make it easy to save and load complex data.
-    jassert(waveX.size() == waveY.size());
-
     const auto state = parameters.copyState();
     const auto xml(state.createXml());
     xml->setAttribute("maxVoices", numVoices);
     xml->setAttribute("oversampleFactor", oversampleFactor);
-    xml->setAttribute("wavetableSize", static_cast<int>(waveX.size()));
     copyXmlToBinary(*xml, destData);
 }
 
@@ -590,11 +550,6 @@ void PolygonAudioProcessor::setStateInformation (const void* data, int sizeInByt
             setOversampleFactor(xmlState->getIntAttribute("oversampleFactor", 2));
             xmlState->removeAttribute("oversampleFactor");
         }
-        if (xmlState->hasAttribute("wavetableSize"))
-        {
-            setWavetableSize(xmlState->getIntAttribute("wavetableSize", 1024));
-            xmlState->removeAttribute("wavetableSize");
-        }
         if (xmlState->hasTagName(parameters.state.getType()))
         {
             parameters.replaceState(ValueTree::fromXml(*xmlState));
@@ -605,24 +560,18 @@ void PolygonAudioProcessor::setStateInformation (const void* data, int sizeInByt
 //==============================================================================
 void PolygonAudioProcessor::updateEnvParams()
 {
-    envParams.attack = *parameters.getRawParameterValue("attack") / 1000.0f;
-    envParams.decay = *parameters.getRawParameterValue("decay") / 1000.0f;
-    envParams.sustain = *parameters.getRawParameterValue("sustain");
-    envParams.release = *parameters.getRawParameterValue("release") / 1000.0f;
+    envParams.attack = *attackParameter / 1000.0f;
+    envParams.decay = *decayParameter / 1000.0f;
+    envParams.sustain = *sustainParameter;
+    envParams.release = *releaseParameter / 1000.0f;
 }
 
 void PolygonAudioProcessor::updateVoiceParams()
 {
-    const auto order = (float)parameters.getParameterAsValue("order").getValue();
-    const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
-    const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
-    const auto rotation = (float)parameters.getParameterAsValue("rotation").getValue();
-    const auto fmratio = (float)parameters.getParameterAsValue("fmratio").getValue();
-    const auto fmamt = (float)parameters.getParameterAsValue("fmamt").getValue();
     for (int i = 0; i < synthesiser.getNumVoices(); i++)
     {
-        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->setSmoothedValues(order, teeth, fold, rotation, fmratio, fmamt);
-        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->updatePhaseIncrement();
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->setTargetValues(*orderParameter, *teethParameter, *foldParameter, *rotationParameter, *fmRatioParameter, *fmAmtParameter);
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->updateModulationPhaseIncrement();
     }
 }
 
@@ -638,7 +587,7 @@ void PolygonAudioProcessor::setNumVoices(int newNumVoices)
     {
         for (auto i = synthNumVoices; i < numVoices; ++i)
         {
-            synthesiser.addVoice(new PolygonVoice(parameters, envParams, waveX, waveY));
+            synthesiser.addVoice(new PolygonVoice(parameters, envParams, cache));
         }
         jassert(numVoices == synthesiser.getNumVoices());
         return;
@@ -663,32 +612,8 @@ void PolygonAudioProcessor::setOversampleFactor(int newOversampleFactor)
     synthesiser.setCurrentPlaybackSampleRate(getSampleRate() * oversampleFactor);
 }
 
-//==============================================================================
-void PolygonAudioProcessor::setWavetableSize(int newWavetableSize)
-{
-    nextWavetableSize = newWavetableSize;
-}
-
-
 // This creates new instances of the plugin..
 AudioProcessor* JUCE_CALLTYPE createPluginFilter()
 {
     return new PolygonAudioProcessor();
-}
-
-std::pair<std::vector<float>, std::vector<float>> PolygonAudioProcessor::generateWavetable(size_t wavetableSize)
-{
-    std::vector<float> waveX(wavetableSize, 0.0f);
-    std::vector<float> waveY(wavetableSize, 0.0f);
-
-    const auto order = (float)parameters.getParameterAsValue("order").getValue();
-    const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
-    const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
-    for (size_t i = 0; i < wavetableSize; i++)
-    {
-        const auto value = PolygonSynthAlgorithm::getSample((float)i / (float)wavetableSize, order, teeth, fold, 0);
-        waveX[i] = value.getX();
-        waveY[i] = value.getY();
-    }
-    return std::make_pair(waveX, waveY);
 }

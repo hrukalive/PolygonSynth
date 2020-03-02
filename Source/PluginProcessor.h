@@ -14,6 +14,7 @@
 #include "hiir/Downsampler2xFpu.h"
 #include "DcBlocker.h"
 #include "RingBuffer.h"
+#include "PolygonAlgorithm.h"
 
 class PolygonAudioProcessorEditor;
 
@@ -61,18 +62,26 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     //==============================================================================
-    std::pair<std::vector<float>, std::vector<float>> generateWavetable(size_t wavetableSize);
+    inline std::pair<std::vector<float>, std::vector<float>> generateWavetable(size_t wavetableSize)
+    {
+        std::vector<float> waveX(wavetableSize, 0.0f);
+        std::vector<float> waveY(wavetableSize, 0.0f);
+
+        for (size_t i = 0; i < wavetableSize; i++)
+        {
+            auto value = PolygonSynthAlgorithm::getSample((float)i / (float)wavetableSize, 0, *orderParameter, *teethParameter, *foldParameter, cache);
+            waveX[i] = value.getX();
+            waveY[i] = value.getY();
+        }
+        return std::make_pair(waveX, waveY);
+    }
 
     //==============================================================================
     void setNumVoices(int newNumVoices);
     int getNumVoices();
     void setOversampleFactor(int newOversampleFactor);
     int getOversampleFactor() const { return oversampleFactor; }
-    void setWavetableSize(int newWavetableSize);
-    int getWavetableSize() const { return static_cast<int>(waveX.size()); }
-    std::vector<float>& getWavetableX() { return waveX; }
-    std::vector<float>& getWavetableY() { return waveY; }
-    std::shared_ptr<RingBuffer<float>>& getRingBuffer() { return ringBuffer; }
+    std::shared_ptr<RingBuffer<float>> getRingBuffer() { return ringBuffer; }
     AudioProcessorValueTreeState& getParameters() { return parameters; }
 
     void editorClosed() { editor = nullptr; }
@@ -81,6 +90,13 @@ private:
     AudioProcessorValueTreeState parameters;
     MidiKeyboardState keyboardState;
     PolygonAudioProcessorEditor* editor{ nullptr };
+
+    PolygonSynthAlgorithm::PolygonCache cache;
+
+    std::atomic<float>* gainParameter{ nullptr };
+    std::atomic<float>* attackParameter{ nullptr }, * decayParameter{ nullptr }, * sustainParameter{ nullptr }, * releaseParameter{ nullptr };
+    std::atomic<float>* orderParameter{ nullptr }, * teethParameter{ nullptr }, * foldParameter{ nullptr };
+    std::atomic<float>* rotationParameter{ nullptr }, * fmRatioParameter{ nullptr }, * fmAmtParameter{ nullptr };
 
     int numVoices{ 10 };
     ADSR::Parameters envParams;
@@ -101,9 +117,6 @@ private:
     static constexpr int maxOversampleFactor{ 16 };
     int oversampleFactor{ 2 };
     AudioBuffer<float> oversampledBuffer;
-
-    int nextWavetableSize{ 1024 };
-    std::vector<float> waveX, waveY;
 
     std::shared_ptr<RingBuffer<float>> ringBuffer;
 

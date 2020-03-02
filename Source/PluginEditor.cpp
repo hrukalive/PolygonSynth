@@ -160,7 +160,6 @@ int PolygonAudioProcessorEditor::getLabelWidth(Label& label)
 
 void PolygonAudioProcessorEditor::paint (Graphics& g)
 {
-    // (Our component is opaque, so we must completely fill the background with a solid colour)
     g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
 
     g.setColour(Colour(0xffdcc296));
@@ -176,7 +175,6 @@ void PolygonAudioProcessorEditor::resized()
     auto titleArea = titleAndSettingsArea.removeFromLeft(titlePath.getBounds().getWidth() + 10 + 100).removeFromTop(32);
     titleArea.removeFromLeft(titlePath.getBounds().getWidth() + 10);
 
-    // padding
     titleArea.removeFromLeft(titleArea.proportionOfWidth(0.5f));
 
     auto settingsArea = titleAndSettingsArea;

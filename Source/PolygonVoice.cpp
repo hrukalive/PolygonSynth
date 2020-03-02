@@ -12,11 +12,10 @@
 #include "PolygonSound.h"
 #include "PolygonAlgorithm.h"
 
-PolygonVoice::PolygonVoice(AudioProcessorValueTreeState& apvts, ADSR::Parameters& envParams,
-    std::vector<float>& wavetableL, std::vector<float>& wavetableR) : parameters(apvts),
-    wavetableL(wavetableL),
-    wavetableR(wavetableR),
-    envParams(envParams)
+PolygonVoice::PolygonVoice(AudioProcessorValueTreeState& apvts, ADSR::Parameters& envParams, PolygonSynthAlgorithm::PolygonCache& c) :
+    parameters(apvts),
+    envParams(envParams),
+    cache(c)
 {
     envelope.setParameters(envParams);
 }
@@ -35,7 +34,7 @@ void PolygonVoice::startNote(int midiNoteNumber, float velocity, SynthesiserSoun
     currentNoteNumber = midiNoteNumber;
     updatePitchBend(currentPitchWheelPosition);
 
-    //updatePhaseIncrement();
+    updatePhaseIncrement();
     level = velocity;
     envelope.noteOn();
 }
@@ -51,7 +50,7 @@ void PolygonVoice::resetSmoothedValues(float order, float teeth, float fold)
     this->fold.setCurrentAndTargetValue(fold);
 }
 
-void PolygonVoice::setSmoothedValues(float order, float teeth, float fold, float rotation, float fmRatio, float fmAmt)
+void PolygonVoice::setTargetValues(float order, float teeth, float fold, float rotation, float fmRatio, float fmAmt)
 {
     this->order.setTargetValue(order);
     this->teeth.setTargetValue(teeth);
@@ -70,7 +69,7 @@ void PolygonVoice::stopNote(float velocity, bool allowTailOff)
     else
     {
         clearCurrentNote();
-        phaseIncrement = 0.0f;
+        basePhaseIncrement = 0.0f;
         fmPhaseIncrement = 0.0f;
         maxPhaseIncrIncrement = 0.0f;
         rotationPhaseIncrement = 0.0f;
@@ -96,11 +95,15 @@ void PolygonVoice::updatePitchBend(int newPitchWheelValue)
 
 void PolygonVoice::updatePhaseIncrement()
 {
-    const auto frequencyOfA = 440.0f;
-    const auto frequency = frequencyOfA * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
+    const auto frequency = 440.0f * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
+    basePhaseIncrement = frequency / getSampleRate();
+}
+
+void PolygonVoice::updateModulationPhaseIncrement()
+{
+    const auto frequency = 440.0f * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
     fmPhaseIncrement = (frequency * fmRatio) / getSampleRate();
-    maxPhaseIncrIncrement = frequency * fmRatio * fmAmt / getSampleRate();
-    phaseIncrement = (frequency + maxPhaseIncrIncrement * std::sinf(2 * MathConstants<float>::twoPi * t_mod)) / getSampleRate();
+    maxPhaseIncrIncrement = frequency* fmRatio* fmAmt / getSampleRate();
     rotationPhaseIncrement = rotation / getSampleRate();
 }
 
@@ -112,34 +115,6 @@ void PolygonVoice::pitchWheelMoved(int newPitchWheelValue)
 
 void PolygonVoice::controllerMoved(int controllerNumber, int newControllerValue)
 {
-}
-
-float PolygonVoice::getNextSample(bool isL)
-{
-    auto& wavetable = isL ? wavetableL : wavetableR;
-
-    const auto waveTablesize = wavetable.size();
-    //linear interpolation between points in the wavetable	
-    auto iFloating = t * waveTablesize;
-    iFloating = std::min(waveTablesize - 1.0f, iFloating);
-    const int iv0 = std::floor(iFloating);
-    const int iv1 = std::ceil(iFloating);
-    const auto b = iFloating - iv0;
-
-    auto v0 = wavetable[iv0];
-    auto v1 = wavetable[iv1];
-
-    auto interpolated = (1.0f - b) * v0 + b * v1;
-
-    auto value = interpolated;
-
-    // if the path has duplicate points it sometimes returns nans
-    if (std::isnan(value))
-    {
-        value = prevValue;
-    }
-    prevValue = value;
-    return value;
 }
 
 void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSample, int numSamples)
@@ -158,15 +133,15 @@ void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSa
             {
                 const auto value = PolygonSynthAlgorithm::getSample(
                     t,
+                    t_rotation,
                     order.getNextValue(),
                     teeth.getNextValue(),
                     fold.getNextValue(),
-                    t_rotation);
+                    cache);
 
                 t_mod += fmPhaseIncrement;
-                phaseIncrement += maxPhaseIncrIncrement * std::sinf(MathConstants<float>::twoPi * t_mod);
-                t += phaseIncrement;
                 t_rotation += rotationPhaseIncrement;
+                t += basePhaseIncrement + maxPhaseIncrIncrement * std::sinf(MathConstants<float>::twoPi * t_mod);
 
                 while (t < 0.0f)
                     t += 1.0f;
@@ -187,10 +162,14 @@ void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSa
         else
         {
             clearCurrentNote();
-            phaseIncrement = 0.0f;
+            basePhaseIncrement = 0.0f;
+            fmPhaseIncrement = 0.0f;
+            maxPhaseIncrIncrement = 0.0f;
             rotationPhaseIncrement = 0.0f;
             prevValue = 0.0f;
             t = 0.0f;
+            t_mod = 0.0f;
+            t_rotation = 0.0f;
             envelope.reset();
             break;
         }

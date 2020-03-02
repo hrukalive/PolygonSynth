@@ -42,9 +42,10 @@ public:
 
 private:
     AudioProcessorValueTreeState& parameters;
+    PolygonAudioProcessor& processor;
     std::vector<float> waveX, waveY;
 
-    std::shared_ptr<RingBuffer<float>>& ringBuffer;
+    std::shared_ptr<RingBuffer<float>> ringBuffer;
     std::unique_ptr<Oscilloscope2D> oscilloscope2D;
 
     size_t resolution{ 1024 };

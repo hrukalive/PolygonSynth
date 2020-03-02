@@ -15,7 +15,7 @@
 
 //==============================================================================
 PolygonDisplay::PolygonDisplay(PolygonAudioProcessor& p) :
-    parameters(p.getParameters()), ringBuffer(p.getRingBuffer())
+    processor(p), parameters(p.getParameters()), ringBuffer(p.getRingBuffer())
 {
     waveX.resize(resolution, 0.0f);
     waveY.resize(resolution, 0.0f);
@@ -98,18 +98,12 @@ void PolygonDisplay::timerCallback()
     {
         changed = false;
 
-        const auto order = (float)parameters.getParameterAsValue("order").getValue();
-        const auto teeth = (float)parameters.getParameterAsValue("teeth").getValue();
-        const auto fold = (float)parameters.getParameterAsValue("fold").getValue();
+        const auto tmp = processor.generateWavetable(resolution);
 
         {
             ScopedLock lock(waveformLock);
-            for (size_t i = 0; i < resolution; i++)
-            {
-                const auto value = PolygonSynthAlgorithm::getSample((float)i / (float)resolution, order, teeth, fold, 0);
-                waveX[i] = value.getX();
-                waveY[i] = value.getY();
-            }
+            waveX = tmp.first;
+            waveY = tmp.second;
         }
 
         repaint();

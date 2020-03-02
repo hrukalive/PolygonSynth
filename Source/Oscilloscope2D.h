@@ -184,7 +184,7 @@ private:
     const char* vertexShader;
     const char* fragmentShader;
 
-    std::shared_ptr<RingBuffer<GLfloat>>& ringBuffer;
+    std::shared_ptr<RingBuffer<GLfloat>> ringBuffer;
     AudioBuffer<GLfloat> readBuffer;
     
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Oscilloscope2D)
