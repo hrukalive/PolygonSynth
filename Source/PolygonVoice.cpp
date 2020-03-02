@@ -102,9 +102,9 @@ void PolygonVoice::updatePhaseIncrement()
 void PolygonVoice::updateModulationPhaseIncrement()
 {
     const auto frequency = 440.0f * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
-    fmPhaseIncrement = (frequency * fmRatio) / getSampleRate();
-    maxPhaseIncrIncrement = frequency* fmRatio* fmAmt / getSampleRate();
-    rotationPhaseIncrement = rotation / getSampleRate();
+    fmPhaseIncrement = frequency * fmRatio / getSampleRate();
+    maxPhaseIncrIncrement = frequency * fmRatio * fmAmt / getSampleRate();
+    rotationPhaseIncrement = rotation * MathConstants<float>::twoPi / getSampleRate();
 }
 
 void PolygonVoice::pitchWheelMoved(int newPitchWheelValue)

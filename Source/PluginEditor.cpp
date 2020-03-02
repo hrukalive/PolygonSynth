@@ -216,18 +216,18 @@ void PolygonAudioProcessorEditor::resized()
 
     auto tmp = middleLeftTopPanel.proportionOfWidth(0.25);
     auto orderArea = middleLeftTopPanel.removeFromLeft(tmp);
-    auto rotationArea = middleLeftTopPanel.removeFromLeft(tmp);
     auto teethArea = middleLeftTopPanel.removeFromLeft(tmp);
     auto foldArea = middleLeftTopPanel.removeFromLeft(tmp);
+    auto rotationArea = middleLeftTopPanel.removeFromLeft(tmp);
 
     setLabelAreaAboveCentered(polygonOrderLabel, orderArea);
-    setLabelAreaAboveCentered(polygonRotationLabel, rotationArea);
     setLabelAreaAboveCentered(polygonTeethLabel, teethArea);
     setLabelAreaAboveCentered(polygonFoldLabel, foldArea);
+    setLabelAreaAboveCentered(polygonRotationLabel, rotationArea);
     polygonOrderSlider.setBounds(orderArea);
-    polygonRotationSlider.setBounds(rotationArea);
     polygonTeethSlider.setBounds(teethArea);
     polygonFoldSlider.setBounds(foldArea);
+    polygonRotationSlider.setBounds(rotationArea);
 
     tmp = middleLeftBottomPanel.proportionOfHeight(0.5);
     auto fmRatioArea = middleLeftBottomPanel.removeFromTop(tmp);

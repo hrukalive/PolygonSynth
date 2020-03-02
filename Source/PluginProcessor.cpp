@@ -169,18 +169,18 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         }));
     params.push_back(std::make_unique<AudioParameterFloat>(
         "rotation",
-        "Rottn",
-        NormalisableRange<float>(0.0f, MathConstants<float>::twoPi, MathConstants<float>::twoPi / 360.0f, 1.0f, false),
+        "Rotation",
+        NormalisableRange<float>(0.0f, 1000.0f, 0.1f, 0.3f, false),
         0.0f,
         String(),
         AudioProcessorParameter::genericParameter,
         [](const float value, int /*maximumStringLength*/)
         {
-            return String(int(value / MathConstants<float>::twoPi * 360)) + String(CharPointer_UTF8("°"));
+            return String(value, 2) + String(CharPointer_UTF8("/s"));
         },
         [](const String& text)
         {
-            return text.getFloatValue() / 360.0f * MathConstants<float>::twoPi;
+            return text.getFloatValue();
         }));
     params.push_back(std::make_unique<AudioParameterFloat>(
         "fold",
@@ -200,7 +200,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
     params.push_back(std::make_unique<AudioParameterFloat>(
         "fmratio",
         "Ratio",
-        NormalisableRange<float>(0.1f, 10.0f, 0.05f, 0.4f, false),
+        NormalisableRange<float>(0.1f, 10.0f, 0.01f, 0.4f, false),
         1.0f,
         String(),
         AudioProcessorParameter::genericParameter,

@@ -96,14 +96,14 @@ public:
                 auto proportion = std::sinf(int_angle) / (fullLength * std::sinf(int_angle - std::acosf(std::sqrtf(arg_arccos))));
                 auto tmp = Line<float>(p0 * (1 - teeth), p1 * (1 - (1 - proportion) * teeth));
                 val = tmp.getPointAlongLineProportionally(proportion * (n - floor_n) / (numVertices - floor_n)).rotatedAboutOrigin(t_rot);
-                cache.proportion = proportion;
-                cache.lines[floor_n] = new Line<float>(tmp);
+                //cache.proportion = proportion;
+                //cache.lines[floor_n] = new Line<float>(tmp);
                 jassert(!isnan(val.getX()) && !isnan(val.getY()));
             }
             else
             {
                 auto tmp = Line<float>(p0 * (1 - teeth), p1);
-                cache.lines[floor_n] = new Line<float>(tmp);
+                //cache.lines[floor_n] = new Line<float>(tmp);
                 val = tmp.getPointAlongLineProportionally(n - floor_n).rotatedAboutOrigin(t_rot);
             }
         }
