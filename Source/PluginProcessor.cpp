@@ -227,6 +227,21 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return text.getFloatValue();
         }));
+    params.push_back(std::make_unique<AudioParameterFloat>(
+        "velgamma",
+        "Vel.Ss.",
+        NormalisableRange<float>(0.1f, 4.0f, 0.1f, 0.5f, false),
+        1.0f,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 1);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
     return { params.begin(), params.end() };
 }
 
@@ -245,6 +260,8 @@ PolygonAudioProcessor::PolygonAudioProcessor()
 #endif
 {
     gainParameter = parameters.getRawParameterValue("outgain");
+    velGammaParameter = parameters.getRawParameterValue("velgamma");
+
     attackParameter = parameters.getRawParameterValue("attack");
     decayParameter = parameters.getRawParameterValue("decay");
     sustainParameter = parameters.getRawParameterValue("sustain");
@@ -260,7 +277,7 @@ PolygonAudioProcessor::PolygonAudioProcessor()
     Process::setPriority(Process::ProcessPriority::RealtimePriority);
     for (auto i = 0; i < numVoices; ++i)
     {
-        synthesiser.addVoice(new PolygonVoice(parameters, envParams, cache));
+        synthesiser.addVoice(new PolygonVoice(parameters, envParams));
     }
     synthesiser.addSound(new PolygonSound());
 }
@@ -318,16 +335,16 @@ int PolygonAudioProcessor::getCurrentProgram()
     return 0;
 }
 
-void PolygonAudioProcessor::setCurrentProgram (int index)
+void PolygonAudioProcessor::setCurrentProgram (int /*index*/)
 {
 }
 
-const String PolygonAudioProcessor::getProgramName (int index)
+const String PolygonAudioProcessor::getProgramName (int /*index*/)
 {
     return {};
 }
 
-void PolygonAudioProcessor::changeProgramName (int index, const String& newName)
+void PolygonAudioProcessor::changeProgramName (int /*index*/, const String& /*newName*/)
 {
 }
 
@@ -572,6 +589,7 @@ void PolygonAudioProcessor::updateVoiceParams()
     {
         dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->setTargetValues(*orderParameter, *teethParameter, *foldParameter, *rotationParameter, *fmRatioParameter, *fmAmtParameter);
         dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->updateModulationPhaseIncrement();
+        dynamic_cast<PolygonVoice*>(synthesiser.getVoice(i))->updateVelGamma(*velGammaParameter);
     }
 }
 
@@ -587,7 +605,7 @@ void PolygonAudioProcessor::setNumVoices(int newNumVoices)
     {
         for (auto i = synthNumVoices; i < numVoices; ++i)
         {
-            synthesiser.addVoice(new PolygonVoice(parameters, envParams, cache));
+            synthesiser.addVoice(new PolygonVoice(parameters, envParams));
         }
         jassert(numVoices == synthesiser.getNumVoices());
         return;

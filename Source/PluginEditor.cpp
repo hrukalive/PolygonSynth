@@ -92,22 +92,17 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
         processor.setOversampleFactor(oversamplingBox.getSelectedId());
     };
 
-    voicesLabel.setText("Max Voices", dontSendNotification);
-    makeLabelUpperCase(voicesLabel);
-    addAndMakeVisible(voicesLabel);
-    addAndMakeVisible(voicesSlider);
-    voicesSlider.setRange(1, PolygonSynthAlgorithm::maxVoices, 1);
-    voicesSlider.setValue(processor.getNumVoices());
-    voicesSlider.onValueChange = [&]() {
-        processor.setNumVoices(voicesSlider.getValue());
-    };
-
     outGainLabel.setText("Out", dontSendNotification);
     makeLabelUpperCase(outGainLabel);
     addAndMakeVisible(outGainLabel);
     addAndMakeVisible(outGainSlider);
-    //outGainSlider.setSliderStyle(Slider::Rotary);
     outGainAttachment.reset(new SliderAttachment(parameters, "outgain", outGainSlider));
+
+    velGammaLabel.setText("Vel.S", dontSendNotification);
+    makeLabelUpperCase(velGammaLabel);
+    addAndMakeVisible(velGammaLabel);
+    addAndMakeVisible(velGammaSlider);
+    velGammaAttachment.reset(new SliderAttachment(parameters, "velgamma", velGammaSlider));
 
     setupAdsrControl(attackLabel, attackSlider, attackAttachment, "Attack", "attack");
     setupAdsrControl(decayLabel, decaySlider, decayAttachment, "Decay", "decay");
@@ -171,23 +166,21 @@ void PolygonAudioProcessorEditor::resized()
     auto area = getBounds();
     area.reduce(10, 10);
 
-    auto titleAndSettingsArea = area.removeFromTop(40);
-    auto titleArea = titleAndSettingsArea.removeFromLeft(titlePath.getBounds().getWidth() + 10 + 100).removeFromTop(32);
-    titleArea.removeFromLeft(titlePath.getBounds().getWidth() + 10);
+    auto settingsArea = area.removeFromTop(40).withTrimmedLeft(int(titlePath.getBounds().getWidth()));
 
-    titleArea.removeFromLeft(titleArea.proportionOfWidth(0.5f));
-
-    auto settingsArea = titleAndSettingsArea;
-    auto settingsTopArea = settingsArea.removeFromTop(32);
-
-    auto outArea = settingsTopArea.removeFromRight(settingsTopArea.proportionOfWidth(0.4f));
-    outGainLabel.setBounds(outArea.removeFromLeft(1.2f * getLabelWidth(outGainLabel)));
-    outGainSlider.setBounds(outArea);
-    oversamplingBox.setBounds(settingsTopArea.removeFromRight(settingsArea.proportionOfWidth(0.3f)));
-    oversamplingLabel.setBounds(settingsTopArea.removeFromRight(getLabelWidth(oversamplingLabel)));
+    auto tmp = settingsArea.proportionOfWidth(0.31);
+    auto outGainArea = settingsArea.removeFromRight(tmp);
+    auto velGammaArea = settingsArea.removeFromRight(tmp);
+    auto oversamplingArea = settingsArea.removeFromRight(tmp);
+    outGainLabel.setBounds(outGainArea.removeFromLeft(int(1.1f * getLabelWidth(outGainLabel))));
+    outGainSlider.setBounds(outGainArea);
+    velGammaLabel.setBounds(velGammaArea.removeFromLeft(int(1.1f * getLabelWidth(velGammaLabel))));
+    velGammaSlider.setBounds(velGammaArea);
+    oversamplingLabel.setBounds(oversamplingArea.removeFromLeft(int(1.1f * getLabelWidth(oversamplingLabel))));
+    oversamplingBox.setBounds(oversamplingArea);
 
     auto adsrBounds = area.removeFromTop(area.proportionOfHeight(0.1f));
-    auto adsrWidth = adsrBounds.getWidth() / 4.0f;
+    auto adsrWidth = int(adsrBounds.getWidth() / 4);
 
     auto attackArea = adsrBounds.removeFromLeft(adsrWidth);
     auto decayArea = adsrBounds.removeFromLeft(adsrWidth);
@@ -214,7 +207,7 @@ void PolygonAudioProcessorEditor::resized()
     auto middleLeftTopPanel = middleLeftPanel.removeFromTop(middleLeftPanel.proportionOfHeight(0.8));
     auto middleLeftBottomPanel = middleLeftPanel.withTrimmedTop(4);
 
-    auto tmp = middleLeftTopPanel.proportionOfWidth(0.25);
+    tmp = middleLeftTopPanel.proportionOfWidth(0.25);
     auto orderArea = middleLeftTopPanel.removeFromLeft(tmp);
     auto teethArea = middleLeftTopPanel.removeFromLeft(tmp);
     auto foldArea = middleLeftTopPanel.removeFromLeft(tmp);

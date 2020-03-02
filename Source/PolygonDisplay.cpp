@@ -43,10 +43,10 @@ PolygonDisplay::~PolygonDisplay()
 
 void PolygonDisplay::paint (Graphics& g)
 {
-    g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));   // clear the background
+    g.fillAll (getLookAndFeel().findColour (ResizableWindow::backgroundColourId));
 
     g.setColour (Colours::grey);
-    g.drawRect (getLocalBounds(), 1);   // draw an outline around the component
+    g.drawRect (getLocalBounds(), 1);
 
     g.setColour(getLookAndFeel().findColour(ResizableWindow::backgroundColourId));
     g.fillRect(getLocalBounds().reduced(1));
@@ -68,10 +68,10 @@ void PolygonDisplay::paint (Graphics& g)
     ScopedLock lock(waveformLock);
     auto width = getWidth() / 2 - 8, height = getHeight() / 2 - 8;
     auto radius = jmin(width, height) / 2;
-    Point<float> center1(getWidth() / 4, getHeight() / 4);
+    Point<float> center1(getWidth() / 4.0f, getHeight() / 4.0f);
     auto deltaWidth = width / (float)waveY.size(), deltaHeight = height / (float)waveX.size();
-    Point<float> starting1(width + 8 + 4, getHeight() / 4);
-    Point<float> starting2(getWidth() / 4, height + 8 + 4);
+    Point<float> starting1(width + 8.0f + 4.0f, getHeight() / 4.0f);
+    Point<float> starting2(getWidth() / 4.0f, height + 8 + 4.0f);
 
     g.setColour(Colours::yellow);
     g.fillEllipse(radius * waveX[0] + center1.getX(), radius * -waveY[0] + center1.getY(), 4, 4);

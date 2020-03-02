@@ -12,10 +12,9 @@
 #include "PolygonSound.h"
 #include "PolygonAlgorithm.h"
 
-PolygonVoice::PolygonVoice(AudioProcessorValueTreeState& apvts, ADSR::Parameters& envParams, PolygonSynthAlgorithm::PolygonCache& c) :
+PolygonVoice::PolygonVoice(AudioProcessorValueTreeState& apvts, ADSR::Parameters& envParams) :
     parameters(apvts),
-    envParams(envParams),
-    cache(c)
+    envParams(envParams)
 {
     envelope.setParameters(envParams);
 }
@@ -29,38 +28,38 @@ bool PolygonVoice::canPlaySound(SynthesiserSound* sound)
     return dynamic_cast<PolygonSound*>(sound) != nullptr;
 }
 
-void PolygonVoice::startNote(int midiNoteNumber, float velocity, SynthesiserSound* sound, int currentPitchWheelPosition)
+void PolygonVoice::startNote(int midiNoteNumber, float velocity, SynthesiserSound* /*sound*/, int currentPitchWheelPosition)
 {
     currentNoteNumber = midiNoteNumber;
     updatePitchBend(currentPitchWheelPosition);
 
     updatePhaseIncrement();
-    level = velocity;
+    level = std::powf(velocity, _velGamma.load());
     envelope.noteOn();
 }
 
 void PolygonVoice::resetSmoothedValues(float order, float teeth, float fold)
 {
-    this->order.reset(getSampleRate(), 0.1);
-    this->teeth.reset(getSampleRate(), 0.1);
-    this->fold.reset(getSampleRate(), 0.1);
+    _order.reset(getSampleRate(), 0.1);
+    _teeth.reset(getSampleRate(), 0.1);
+    _fold.reset(getSampleRate(), 0.1);
 
-    this->order.setCurrentAndTargetValue(order);
-    this->teeth.setCurrentAndTargetValue(teeth);
-    this->fold.setCurrentAndTargetValue(fold);
+    _order.setCurrentAndTargetValue(order);
+    _teeth.setCurrentAndTargetValue(teeth);
+    _fold.setCurrentAndTargetValue(fold);
 }
 
 void PolygonVoice::setTargetValues(float order, float teeth, float fold, float rotation, float fmRatio, float fmAmt)
 {
-    this->order.setTargetValue(order);
-    this->teeth.setTargetValue(teeth);
-    this->fold.setTargetValue(fold);
-    this->rotation = rotation;
-    this->fmRatio = fmRatio;
-    this->fmAmt = fmAmt;
+    _order.setTargetValue(order);
+    _teeth.setTargetValue(teeth);
+    _fold.setTargetValue(fold);
+    _rotation = rotation;
+    _fmRatio = fmRatio;
+    _fmAmt = fmAmt;
 }
 
-void PolygonVoice::stopNote(float velocity, bool allowTailOff)
+void PolygonVoice::stopNote(float /*velocity*/, bool allowTailOff)
 {
     if (allowTailOff)
     {
@@ -101,10 +100,15 @@ void PolygonVoice::updatePhaseIncrement()
 
 void PolygonVoice::updateModulationPhaseIncrement()
 {
-    const auto frequency = 440.0f * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
-    fmPhaseIncrement = frequency * fmRatio / getSampleRate();
-    maxPhaseIncrIncrement = frequency * fmRatio * fmAmt / getSampleRate();
-    rotationPhaseIncrement = rotation * MathConstants<float>::twoPi / getSampleRate();
+    const auto frequency = 440.0 * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
+    fmPhaseIncrement = frequency * _fmRatio / getSampleRate();
+    maxPhaseIncrIncrement = frequency * _fmRatio * _fmAmt / getSampleRate();
+    rotationPhaseIncrement = _rotation * MathConstants<float>::twoPi / getSampleRate();
+}
+
+void PolygonVoice::updateVelGamma(float velGamma)
+{
+    _velGamma = velGamma;
 }
 
 void PolygonVoice::pitchWheelMoved(int newPitchWheelValue)
@@ -113,7 +117,7 @@ void PolygonVoice::pitchWheelMoved(int newPitchWheelValue)
     updatePhaseIncrement();
 }
 
-void PolygonVoice::controllerMoved(int controllerNumber, int newControllerValue)
+void PolygonVoice::controllerMoved(int /*controllerNumber*/, int /*newControllerValue*/)
 {
 }
 
@@ -134,10 +138,9 @@ void PolygonVoice::renderNextBlock(AudioBuffer<float>& outputBuffer, int startSa
                 const auto value = PolygonSynthAlgorithm::getSample(
                     t,
                     t_rotation,
-                    order.getNextValue(),
-                    teeth.getNextValue(),
-                    fold.getNextValue(),
-                    cache);
+                    _order.getNextValue(),
+                    _teeth.getNextValue(),
+                    _fold.getNextValue());
 
                 t_mod += fmPhaseIncrement;
                 t_rotation += rotationPhaseIncrement;

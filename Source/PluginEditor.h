@@ -41,7 +41,7 @@ public:
 
     void stopDrawing() { display->stopDrawing(); }
     void startDrawing() { display->startDrawing(); }
-    void updateBlocksize(float bs) { display->updateBlocksize(bs); }
+    void updateBlocksize(int bs) { display->updateBlocksize(bs); }
 
 private:
     using SliderAttachment = AudioProcessorValueTreeState::SliderAttachment;
@@ -52,9 +52,6 @@ private:
 
     MidiKeyboardState& keyboardState;
     MidiKeyboardComponent keyboardComponent;
-
-    Label voicesLabel;
-    Slider voicesSlider;
 
     Label oversamplingLabel;
     ComboBox oversamplingBox;
@@ -78,6 +75,10 @@ private:
     Label outGainLabel;
     Slider outGainSlider;
     std::unique_ptr<SliderAttachment> outGainAttachment;
+
+    Label velGammaLabel;
+    Slider velGammaSlider;
+    std::unique_ptr<SliderAttachment> velGammaAttachment;
 
     Label polygonOrderLabel;
     Slider polygonOrderSlider;

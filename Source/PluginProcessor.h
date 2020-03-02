@@ -53,9 +53,9 @@ public:
     //==============================================================================
     int getNumPrograms() override;
     int getCurrentProgram() override;
-    void setCurrentProgram (int index) override;
-    const String getProgramName (int index) override;
-    void changeProgramName (int index, const String& newName) override;
+    void setCurrentProgram (int /*index*/) override;
+    const String getProgramName (int /*index*/) override;
+    void changeProgramName (int /*index*/, const String& /*newName*/) override;
 
     //==============================================================================
     void getStateInformation (MemoryBlock& destData) override;
@@ -69,7 +69,7 @@ public:
 
         for (size_t i = 0; i < wavetableSize; i++)
         {
-            auto value = PolygonSynthAlgorithm::getSample((float)i / (float)wavetableSize, 0, *orderParameter, *teethParameter, *foldParameter, cache);
+            auto value = PolygonSynthAlgorithm::getSample((float)i / (float)wavetableSize, 0, *orderParameter, *teethParameter, *foldParameter);
             waveX[i] = value.getX();
             waveY[i] = value.getY();
         }
@@ -91,9 +91,7 @@ private:
     MidiKeyboardState keyboardState;
     PolygonAudioProcessorEditor* editor{ nullptr };
 
-    PolygonSynthAlgorithm::PolygonCache cache;
-
-    std::atomic<float>* gainParameter{ nullptr };
+    std::atomic<float>* gainParameter{ nullptr }, * velGammaParameter{ nullptr };
     std::atomic<float>* attackParameter{ nullptr }, * decayParameter{ nullptr }, * sustainParameter{ nullptr }, * releaseParameter{ nullptr };
     std::atomic<float>* orderParameter{ nullptr }, * teethParameter{ nullptr }, * foldParameter{ nullptr };
     std::atomic<float>* rotationParameter{ nullptr }, * fmRatioParameter{ nullptr }, * fmAmtParameter{ nullptr };

@@ -7,7 +7,7 @@
 
 #pragma once
 
-#include "../JuceLibraryCode/JuceHeader.h"
+#include <JuceHeader.h>
 
 /** A circular, lock-free buffer for multiple channels of audio.
  
@@ -35,7 +35,7 @@ public:
         this->bufferSize = bufferSize;
         this->numChannels = numChannels;
         
-        audioBuffer = new AudioBuffer<Type> (numChannels, bufferSize);
+        audioBuffer = std::make_unique<AudioBuffer<Type>>(numChannels, bufferSize);
         writePosition = 0;
     }
     
@@ -159,7 +159,7 @@ public:
 private:
     int bufferSize;
     int numChannels;
-    ScopedPointer<AudioBuffer<Type>> audioBuffer;
+    std::unique_ptr<AudioBuffer<Type>> audioBuffer;
     Atomic<int> writePosition; // This must be atomic so the conumer does
                                // not read it in a torn state as it is being
                                // changed.

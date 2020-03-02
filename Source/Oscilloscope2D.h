@@ -9,8 +9,7 @@ class Oscilloscope2D :  public Component,
     
 public:
     
-    Oscilloscope2D (std::shared_ptr<RingBuffer<GLfloat>>& ringBuffer)
-    : ringBuffer(ringBuffer)
+    Oscilloscope2D (std::shared_ptr<RingBuffer<GLfloat>>& ringBuffer) : ringBuffer(ringBuffer)
     {
         openGLContext.setOpenGLVersionRequired (OpenGLContext::OpenGLVersion::openGL3_2);
         
@@ -92,7 +91,7 @@ public:
         
         // VBO (Vertex Buffer Object) - Bind and Write to Buffer
         openGLContext.extensions.glBindBuffer (GL_ARRAY_BUFFER, VBO);
-        openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER, readSize * 2 * sizeof(GLfloat), vertices, GL_DYNAMIC_DRAW);
+        openGLContext.extensions.glBufferData (GL_ARRAY_BUFFER, readSize * 2 * (int)sizeof(GLfloat), vertices, GL_DYNAMIC_DRAW);
         
         // Setup Vertex Attributes
         openGLContext.extensions.glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat), (GLvoid*)0);
@@ -111,7 +110,7 @@ public:
     //==========================================================================
     // JUCE Callbacks
     
-    void paint (Graphics& g) override
+    void paint (Graphics& /*g*/) override
     {
     }
     
@@ -119,7 +118,7 @@ public:
     {
     }
 
-    void updateBlocksize(float bs)
+    void updateBlocksize(int bs)
     {
         stop();
         blockSize.set(bs);
@@ -153,14 +152,14 @@ private:
         "    gl_FragColor = vec4(1, 1, 0, 1);\n"
         "}\n";
         
-        ScopedPointer<OpenGLShaderProgram> newShader (new OpenGLShaderProgram (openGLContext));
+        std::unique_ptr<OpenGLShaderProgram> newShader (new OpenGLShaderProgram (openGLContext));
         String statusText;
         
         if (newShader->addVertexShader (OpenGLHelpers::translateVertexShaderToV3 (vertexShader))
             && newShader->addFragmentShader (OpenGLHelpers::translateFragmentShaderToV3 (fragmentShader))
             && newShader->link())
         {
-            shader = newShader;
+            shader.swap(newShader);
             shader->use();
             
             statusText = "GLSL: v" + String (OpenGLShaderProgram::getLanguageVersion(), 2);
@@ -179,10 +178,10 @@ private:
     Atomic<int> blockSize{ 256 };
     GLfloat* vertices{ nullptr };
     
-    ScopedPointer<OpenGLShaderProgram> shader;
+    std::unique_ptr<OpenGLShaderProgram> shader{ nullptr };
     
-    const char* vertexShader;
-    const char* fragmentShader;
+    const char* vertexShader{ nullptr };
+    const char* fragmentShader{ nullptr };
 
     std::shared_ptr<RingBuffer<GLfloat>> ringBuffer;
     AudioBuffer<GLfloat> readBuffer;
