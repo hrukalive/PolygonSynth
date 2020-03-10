@@ -42,7 +42,7 @@ public:
         {
             auto arg_arccos = (1.0f - std::cosf(deltaAngle)) / 2.0f;
             auto int_angle = deltaAngle * std::floorf(numVertices);
-            auto proportion = std::sinf(int_angle) / (fullLength * std::sinf(int_angle - std::acosf(std::sqrtf(arg_arccos))));
+            auto proportion = -std::sinf(int_angle) / (fullLength * std::sinf(int_angle + deltaAngle + std::acosf(std::sqrtf(arg_arccos))));
             auto tmp = Line<float>(p0 * (1 - teeth), p1 * (1 - (1 - proportion) * teeth));
             val = tmp.getPointAlongLineProportionally(proportion * (n - floor_n) / (numVertices - floor_n)).rotatedAboutOrigin(t_rot);
             jassert(!isnan(val.getX()) && !isnan(val.getY()));
