@@ -15,11 +15,11 @@
 #include "hiir/PolyphaseIir2Designer.h"
 
 
-AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
+AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParameterLayout()
 {
     std::vector<std::unique_ptr<RangedAudioParameter>> params;
 
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "outgain",
         "Out Gain",
         NormalisableRange<float>(0.0f,
@@ -39,7 +39,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return Decibels::decibelsToGain(text.getFloatValue());
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "attack",
         "Attack",
         NormalisableRange<float>(0.0f,
@@ -65,7 +65,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
             }
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "decay",
         "Decay",
         NormalisableRange<float>(1.0f,
@@ -91,7 +91,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
             }
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "sustain",
         "Sustain",
         NormalisableRange<float>(0.0f,
@@ -111,7 +111,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return Decibels::decibelsToGain(text.getFloatValue());
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "release",
         "Release",
         NormalisableRange<float>(1.0f,
@@ -137,7 +137,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
             }
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "order",
         "Order",
         NormalisableRange<float>(2.0f, 20.0f, 0.02f, 0.4f, false),
@@ -152,7 +152,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "teeth",
         "Teeth",
         NormalisableRange<float>(0.0f, 1.0f, 0.01f, 1.0f, false),
@@ -167,7 +167,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return text.getFloatValue() / 100.0f;
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "rotation",
         "Rotation",
         NormalisableRange<float>(0.0f, 1000.0f, 0.1f, 0.3f, false),
@@ -182,7 +182,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "fold",
         "Fold",
         NormalisableRange<float>(1.0f, 10.0f, 0.05f, 0.4f, false),
@@ -197,7 +197,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "fmratio",
         "Ratio",
         NormalisableRange<float>(0.1f, 10.0f, 0.01f, 0.4f, false),
@@ -212,7 +212,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "fmamt",
         "Amt",
         NormalisableRange<float>(0.0f, 10.0f, 0.01f, 0.4f, false),
@@ -227,7 +227,7 @@ AudioProcessorValueTreeState::ParameterLayout createParameterLayout()
         {
             return text.getFloatValue();
         }));
-    params.push_back(std::make_unique<AudioParameterFloat>(
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "velgamma",
         "Vel.Ss.",
         NormalisableRange<float>(0.1f, 4.0f, 0.1f, 0.5f, false),

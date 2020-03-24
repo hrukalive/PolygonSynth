@@ -87,6 +87,35 @@ public:
     void editorClosed() { editor = nullptr; }
 
 private:
+    class AudioParameterFloatVariant : public AudioParameterFloat
+    {
+    public:
+        AudioParameterFloatVariant(const String& parameterID,
+            const String& parameterName,
+            NormalisableRange<float> normalisableRange,
+            float defaultValue,
+            const String& parameterLabel = String(),
+            Category parameterCategory = AudioProcessorParameter::genericParameter,
+            std::function<String(float value, int maximumStringLength)> stringFromValue = nullptr,
+            std::function<float(const String & text)> valueFromString = nullptr) :
+            AudioParameterFloat(parameterID,
+                parameterName,
+                normalisableRange,
+                defaultValue,
+                parameterLabel,
+                parameterCategory,
+                stringFromValue,
+                valueFromString)
+        {}
+
+    protected:
+        void valueChanged(float newValue) override
+        {
+            sendValueChangedMessageToListeners(convertTo0to1(newValue));
+        }
+    };
+    static AudioProcessorValueTreeState::ParameterLayout createParameterLayout();
+
     AudioProcessorValueTreeState parameters;
     MidiKeyboardState keyboardState;
     PolygonAudioProcessorEditor* editor{ nullptr };
