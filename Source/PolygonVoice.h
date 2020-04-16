@@ -38,6 +38,10 @@ public:
 private:
     AudioProcessorValueTreeState& parameters;
 
+    String centShiftParamNames[12]{ "centShiftOfC", "centShiftOfC#",
+        "centShiftOfD", "centShiftOfD#", "centShiftOfE", "centShiftOfF", "centShiftOfF#",
+        "centShiftOfG", "centShiftOfG#", "centShiftOfA", "centShiftOfA#", "centShiftOfB", };
+
     SmoothedValue<float> _order{ 2.0f }, _teeth{ 0.0f }, _fold{ 1.0f };
     float _rotation{ 0.0f }, _fmRatio{ 1.0f }, _fmAmt{ 0.0f };
 

@@ -242,6 +242,202 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
         {
             return text.getFloatValue();
         }));
+    // ==== Tuning ====
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "freqOfA",
+        "A4 Freq",
+        NormalisableRange<float>(400, 480, 1),
+        440,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfC",
+        "C",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfC#",
+        "C#",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfD",
+        "D",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfD#",
+        "D#",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfE",
+        "E",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfF",
+        "F",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfF#",
+        "F#",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfG",
+        "G",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfG#",
+        "G#",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfA",
+        "A",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfA#",
+        "A#",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
+    params.push_back(std::make_unique<AudioParameterFloatVariant>(
+        "centShiftOfB",
+        "B",
+        NormalisableRange<float>(-50, 50, 1),
+        0,
+        String(),
+        AudioProcessorParameter::genericParameter,
+        [](const float value, int /*maximumStringLength*/)
+        {
+            return String(value, 0);
+        },
+        [](const String& text)
+        {
+            return text.getFloatValue();
+        }));
     return { params.begin(), params.end() };
 }
 

@@ -40,9 +40,9 @@ void PolygonVoice::startNote(int midiNoteNumber, float velocity, SynthesiserSoun
 
 void PolygonVoice::resetSmoothedValues(float order, float teeth, float fold)
 {
-    _order.reset(getSampleRate(), 0.1);
-    _teeth.reset(getSampleRate(), 0.1);
-    _fold.reset(getSampleRate(), 0.1);
+    _order.reset(getSampleRate(), 0.01);
+    _teeth.reset(getSampleRate(), 0.01);
+    _fold.reset(getSampleRate(), 0.01);
 
     _order.setCurrentAndTargetValue(order);
     _teeth.setCurrentAndTargetValue(teeth);
@@ -94,13 +94,19 @@ void PolygonVoice::updatePitchBend(int newPitchWheelValue)
 
 void PolygonVoice::updatePhaseIncrement()
 {
-    const auto frequency = 440.0f * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
+    const auto frequency = (*parameters.getRawParameterValue("freqOfA")) *
+        std::pow(2.0f, (currentNoteNumber + pitchBend + 
+        (*parameters.getRawParameterValue(centShiftParamNames[currentNoteNumber % 12]) / 100.0f)
+            - 69.0f) / 12.0f);
     basePhaseIncrement = frequency / getSampleRate();
 }
 
 void PolygonVoice::updateModulationPhaseIncrement()
 {
-    const auto frequency = 440.0 * std::pow(2.0f, (currentNoteNumber + pitchBend - 69.0f) / 12.0f);
+    const auto frequency = (*parameters.getRawParameterValue("freqOfA")) *
+        std::pow(2.0f, (currentNoteNumber + pitchBend +
+        (*parameters.getRawParameterValue(centShiftParamNames[currentNoteNumber % 12]) / 100.0f)
+            - 69.0f) / 12.0f);
     fmPhaseIncrement = frequency * _fmRatio / getSampleRate();
     maxPhaseIncrIncrement = frequency * _fmRatio * _fmAmt / getSampleRate();
     rotationPhaseIncrement = _rotation * MathConstants<float>::twoPi / getSampleRate();

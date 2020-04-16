@@ -12,6 +12,7 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include "PolygonAlgorithm.h"
+#include "TuningEditor.h"
 
 //==============================================================================
 PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& p, AudioProcessorValueTreeState& apvts, MidiKeyboardState& ks)
@@ -75,6 +76,26 @@ PolygonAudioProcessorEditor::PolygonAudioProcessorEditor(PolygonAudioProcessor& 
     polygonFmAmtSlider.setTextBoxStyle(Slider::TextBoxRight, false, 64, 32);
     polygonFmAmtAttachment.reset(new SliderAttachment(parameters, "fmamt", polygonFmAmtSlider));
 
+
+    freqOfALabel.setText("A4 Freq", dontSendNotification);
+    makeLabelUpperCase(freqOfALabel);
+    addAndMakeVisible(freqOfALabel);
+    addAndMakeVisible(freqOfASlider);
+    freqOfASlider.setTextBoxStyle(Slider::TextBoxRight, false, 64, 32);
+    freqOfAAttachment.reset(new SliderAttachment(parameters, "freqOfA", freqOfASlider));
+
+    tuningBtn.onClick = [&]() {
+        DialogWindow::LaunchOptions dialogOption;
+
+        dialogOption.dialogTitle = "Tuning";
+        dialogOption.dialogBackgroundColour = LookAndFeel::getDefaultLookAndFeel().findColour(ResizableWindow::backgroundColourId);
+        dialogOption.escapeKeyTriggersCloseButton = false;
+        dialogOption.useNativeTitleBar = false;
+        dialogOption.resizable = true;
+        dialogOption.content.setOwned(new TuningEditor(apvts));
+        dialogOption.launchAsync();
+    };
+    addAndMakeVisible(tuningBtn);
 
     addAndMakeVisible(keyboardComponent);
 
@@ -204,7 +225,7 @@ void PolygonAudioProcessorEditor::resized()
     auto middleLeftPanel = middlePanel.removeFromLeft(middlePanel.proportionOfWidth(0.4));
     auto middleRightPanel = middlePanel.withTrimmedLeft(4);
     display->setBounds(middleRightPanel);
-    auto middleLeftTopPanel = middleLeftPanel.removeFromTop(middleLeftPanel.proportionOfHeight(0.8));
+    auto middleLeftTopPanel = middleLeftPanel.removeFromTop(middleLeftPanel.proportionOfHeight(0.7));
     auto middleLeftBottomPanel = middleLeftPanel.withTrimmedTop(4);
 
     tmp = middleLeftTopPanel.proportionOfWidth(0.25);
@@ -222,19 +243,17 @@ void PolygonAudioProcessorEditor::resized()
     polygonFoldSlider.setBounds(foldArea);
     polygonRotationSlider.setBounds(rotationArea);
 
-    tmp = middleLeftBottomPanel.proportionOfHeight(0.5);
+    tmp = middleLeftBottomPanel.proportionOfHeight(0.33);
     auto fmRatioArea = middleLeftBottomPanel.removeFromTop(tmp);
     auto fmAmtArea = middleLeftBottomPanel.removeFromTop(tmp);
-    tmp = jmax(getLabelWidth(polygonFmRatioLabel), getLabelWidth(polygonFmAmtLabel));
+    auto tuningArea = middleLeftBottomPanel.removeFromTop(tmp);
+    tmp = jmax(getLabelWidth(polygonFmRatioLabel), getLabelWidth(polygonFmAmtLabel), getLabelWidth(freqOfALabel));
     polygonFmRatioLabel.setBounds(fmRatioArea.removeFromLeft(tmp));
     polygonFmRatioSlider.setBounds(fmRatioArea);
     polygonFmAmtLabel.setBounds(fmAmtArea.removeFromLeft(tmp));
     polygonFmAmtSlider.setBounds(fmAmtArea);
-}
-
-void PolygonAudioProcessorEditor::sliderValueChanged(Slider* slider)
-{
-    if (slider == &polygonOrderSlider)
-    {
-    }
+    freqOfALabel.setBounds(tuningArea.removeFromLeft(tmp));
+    tuningBtn.setBounds(tuningArea.removeFromRight(80));
+    tuningArea.removeFromRight(4);
+    freqOfASlider.setBounds(tuningArea);
 }

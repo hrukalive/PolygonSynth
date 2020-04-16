@@ -60,6 +60,9 @@
       <FILE id="vxRQ4p" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="WaEmDj" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="pN89mv" name="TuningEditor.cpp" compile="1" resource="0"
+            file="Source/TuningEditor.cpp"/>
+      <FILE id="dBuTjJ" name="TuningEditor.h" compile="0" resource="0" file="Source/TuningEditor.h"/>
     </GROUP>
   </MAINGROUP>
   <EXPORTFORMATS>

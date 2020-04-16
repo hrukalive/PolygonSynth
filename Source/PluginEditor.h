@@ -17,8 +17,7 @@
 //==============================================================================
 /**
 */
-class PolygonAudioProcessorEditor : public AudioProcessorEditor,
-    public Slider::Listener
+class PolygonAudioProcessorEditor : public AudioProcessorEditor
 {
 public:
     PolygonAudioProcessorEditor(PolygonAudioProcessor&, AudioProcessorValueTreeState&, MidiKeyboardState&);
@@ -37,7 +36,6 @@ public:
     void resized() override;
 
     //==============================================================================
-    void sliderValueChanged(Slider* slider) override;
 
     void stopDrawing() { display->stopDrawing(); }
     void startDrawing() { display->startDrawing(); }
@@ -103,6 +101,12 @@ private:
     Label polygonFmAmtLabel;
     Slider polygonFmAmtSlider;
     std::unique_ptr<SliderAttachment> polygonFmAmtAttachment;
+
+    Label freqOfALabel;
+    Slider freqOfASlider;
+    std::unique_ptr<SliderAttachment> freqOfAAttachment;
+
+    TextButton tuningBtn{ "Tuning" };
 
     Path titlePath;
 
