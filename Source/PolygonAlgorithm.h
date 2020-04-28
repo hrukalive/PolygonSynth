@@ -38,7 +38,7 @@ public:
         Point<float> p0 = Point<float>(std::cos(deltaAngle * floor_n), std::sin(deltaAngle * floor_n));
         Point<float> p1 = Point<float>(std::cos(deltaAngle * (floor_n + 1)), std::sin(deltaAngle * (floor_n + 1)));
 
-        if (floor_n + 1 > numVertices)
+        if (floor_n + 1 > numVertices && numVertices - floor_n >= 0.01)
         {
             auto arg_arccos = (1.0f - std::cosf(deltaAngle)) / 2.0f;
             auto int_angle = deltaAngle * std::floorf(numVertices);
