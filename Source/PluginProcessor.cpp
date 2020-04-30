@@ -261,7 +261,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfC",
         "C",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -276,7 +276,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfC#",
         "C#",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -291,7 +291,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfD",
         "D",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -306,7 +306,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfD#",
         "D#",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -321,7 +321,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfE",
         "E",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -336,7 +336,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfF",
         "F",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -351,7 +351,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfF#",
         "F#",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -366,7 +366,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfG",
         "G",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -381,7 +381,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfG#",
         "G#",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -396,7 +396,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfA",
         "A",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -411,7 +411,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfA#",
         "A#",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,
@@ -426,7 +426,7 @@ AudioProcessorValueTreeState::ParameterLayout PolygonAudioProcessor::createParam
     params.push_back(std::make_unique<AudioParameterFloatVariant>(
         "centShiftOfB",
         "B",
-        NormalisableRange<float>(-50, 50, 1),
+        NormalisableRange<float>(-100, 100, 1),
         0,
         String(),
         AudioProcessorParameter::genericParameter,

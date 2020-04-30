@@ -40,7 +40,8 @@ TuningEditor::TuningEditor(AudioProcessorValueTreeState& apvts) :
             {
                 auto* param = parameters.getParameter(centShiftParamNames[i]);
                 param->setValue(param->convertTo0to1(
-                    presets[presetBox.getSelectedId() - 1][(i + rootBox.getSelectedId() - 1) % 12]));
+                    presets[presetBox.getSelectedId() - 1][((i - rootBox.getSelectedId() - 1) % 12 + 12) % 12] - 
+                    presets[presetBox.getSelectedId() - 1][((9 - rootBox.getSelectedId() - 1) % 12 + 12) % 12]));
             }
         }
     };
@@ -55,7 +56,8 @@ TuningEditor::TuningEditor(AudioProcessorValueTreeState& apvts) :
         {
             auto* param = parameters.getParameter(centShiftParamNames[i]);
             param->setValue(param->convertTo0to1(
-                presets[presetBox.getSelectedId() - 1][(i + rootBox.getSelectedId() - 1) % 12]));
+                presets[presetBox.getSelectedId() - 1][((i - rootBox.getSelectedId() - 1) % 12 + 12) % 12] -
+                presets[presetBox.getSelectedId() - 1][((9 - rootBox.getSelectedId() - 1) % 12 + 12) % 12]));
         }
     };
 
