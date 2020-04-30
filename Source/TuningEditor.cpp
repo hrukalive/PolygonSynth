@@ -40,8 +40,8 @@ TuningEditor::TuningEditor(AudioProcessorValueTreeState& apvts) :
             {
                 auto* param = parameters.getParameter(centShiftParamNames[i]);
                 param->setValue(param->convertTo0to1(
-                    presets[presetBox.getSelectedId() - 1][((i - rootBox.getSelectedId() - 1) % 12 + 12) % 12] - 
-                    presets[presetBox.getSelectedId() - 1][((9 - rootBox.getSelectedId() - 1) % 12 + 12) % 12]));
+                    presets[presetBox.getSelectedId() - 1][((i - (rootBox.getSelectedId() - 1)) % 12 + 12) % 12] -
+                    presets[presetBox.getSelectedId() - 1][((9 - (rootBox.getSelectedId() - 1)) % 12 + 12) % 12]));
             }
         }
     };
@@ -50,14 +50,15 @@ TuningEditor::TuningEditor(AudioProcessorValueTreeState& apvts) :
     presetBox.addItem("Just", 2);
     presetBox.addItem("Pythagorean", 3);
     presetBox.addItem("1/4 Comma Meantone", 4);
+    presetBox.addItem("Werckmeister III", 5);
     addAndMakeVisible(presetBox);
     presetBox.onChange = [&]() {
         for (int i = 0; i < 12; i++)
         {
             auto* param = parameters.getParameter(centShiftParamNames[i]);
             param->setValue(param->convertTo0to1(
-                presets[presetBox.getSelectedId() - 1][((i - rootBox.getSelectedId() - 1) % 12 + 12) % 12] -
-                presets[presetBox.getSelectedId() - 1][((9 - rootBox.getSelectedId() - 1) % 12 + 12) % 12]));
+                presets[presetBox.getSelectedId() - 1][((i - (rootBox.getSelectedId() - 1)) % 12 + 12) % 12] -
+                presets[presetBox.getSelectedId() - 1][((9 - (rootBox.getSelectedId() - 1)) % 12 + 12) % 12]));
         }
     };
 
